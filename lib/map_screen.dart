@@ -238,7 +238,7 @@ class _MapScreenState extends State<MapScreen> {
                             color: Colors.white,
                           )
                         : Icon(
-                            Icons.settings,
+                            Icons.track_changes,
                             color: Colors.white,
                           ),
                   ),

@@ -11,9 +11,6 @@ class Sidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blueGrey.shade300,
-            ),
             child: Container(
               width: 200, // Adjust the width to make the decoration smaller
               height: 100, // Adjust the height to make the decoration smaller
@@ -26,29 +23,48 @@ class Sidebar extends StatelessWidget {
                       children: [
                         Row(
                           children: [
+                            Image.network(
+                              'https://play-lh.googleusercontent.com/RIU1oM-b4OadLlOuvhwvuzjw1fVh54gHNq-CQfT2UdOzOG6rajBVqPm3wkkKirxyPr0=w300', // Replace with the correct image path
+                              width: 50, // Adjust the width as desired
+                              height: 45,
+                              fit: BoxFit
+                                  .fitHeight, // Adjust the height as desired
+                            ),
                             SizedBox(
-                              width: 8,
+                              width: 15,
                             ),
                             Text(
-                              'HELLO',
+                              'Login here!',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
+                                color: Colors.black,
+                                fontSize: 30,
+                                fontStyle:
+                                    FontStyle.italic, // Make the text italic
                               ),
                             ),
                           ],
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // Handle the View Profile button tap
-                          },
-                          child: Text(
-                            'View Profile',
-                            style: TextStyle(
-                              color: Colors.white,
+                        SizedBox(
+                          height: 15,
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              // Handle the View Profile button tap
+                            },
+                            child: Text(
+                              'View Profile',
+                              style: TextStyle(
+                                color: Colors.blueAccent,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
-                        ),
+                        )
                       ],
                     ),
                   ),
@@ -56,10 +72,9 @@ class Sidebar extends StatelessWidget {
               ),
             ),
           ),
-
           ListTile(
             leading: Icon(
-              Icons.drive_eta,
+              Icons.route,
               color: Colors.black,
             ), // Add an icon for the "Plan a drive" ListTile
             title: Text(
@@ -114,6 +129,21 @@ class Sidebar extends StatelessWidget {
               ),
             ),
             onTap: () {},
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.power_settings_new,
+              color: Colors.black,
+            ), // Add an icon for the "Plan a drive" ListTile
+            title: Text(
+              'Sleep mode',
+              style: TextStyle(
+                fontWeight: FontWeight.bold, // Make the text bold
+              ),
+            ),
+            onTap: () {
+              // Handle item 1 tap
+            },
           ),
         ],
       ),
