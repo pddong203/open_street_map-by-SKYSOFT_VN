@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:routesapp/map_screen.dart';
-
+import 'SiderBar.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MapScreen(),
+      home: Stack(children: [MapScreen()]),
     );
   }
 }

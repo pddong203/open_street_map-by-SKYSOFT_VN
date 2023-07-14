@@ -1,9 +1,12 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:routesapp/api.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'SiderBar.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -13,10 +16,19 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  List<dynamic> listOfPoints = [];
   List<LatLng> points = [];
   int _currentIndex = 0;
   bool _isBottomSheetExpanded = false;
+  bool _isSidebarOpen = false;
+  bool isExpanded = false;
+  List listOfPoints = []; // Track the expansion state of the button
+  LatLng curloca = new LatLng(21.000041, 105.79954);
+
+  void toggleSidebar() {
+    setState(() {
+      _isSidebarOpen = !_isSidebarOpen;
+    });
+  }
 
   void onTabTapped(int index) {
     setState(() {
@@ -25,9 +37,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   getCoordinates() async {
-    var response = await http.get(getRouteUrl(
-        "21.053559580851587, 105.78037866772688",
-        '21.053564062843243, 105.78005271591009'));
+    // Requesting for openrouteservice api
+    var response = await http
+        .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
     setState(() {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
@@ -37,6 +49,57 @@ class _MapScreenState extends State<MapScreen> {
             .toList();
       }
     });
+  }
+
+  @override
+  double? lat;
+  double? long;
+  String address = "";
+
+// XIN CẦP QUYỀN TRUY CẬP GPS
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best);
+  }
+
+  MapController mapController = MapController();
+
+  currentLoc() async {
+    Position data = await _determinePosition();
+    log(data.latitude.toString());
+    log(data.longitude.toString());
+    curloca = new LatLng(data.latitude, data.longitude);
+    mapController.move(curloca, mapController.zoom);
   }
 
   void handleButtonPress() {
@@ -52,23 +115,37 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'MAP_SKYSOFT',
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        backgroundColor: Colors.blueGrey,
+      ),
+      drawer: Sidebar(onClose: toggleSidebar),
       body: Stack(
         children: [
           FlutterMap(
             options: MapOptions(
-              zoom: 15,
-              center: LatLng(21.05331612310779, 105.7799679029661),
-              rotation: 90.0,
-            ),
+                zoom: 15,
+                center: LatLng(9.419846399204014, 105.62851753615416)),
+            mapController: mapController,
+            nonRotatedChildren: [],
             children: [
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: 'dev.fleaflet.flutter_map.example',
               ),
+
+              // ĐIỂM ĐÁNH DẤU MARKER
               MarkerLayer(
+                rotate: true,
                 markers: [
+                  // First Marker
                   Marker(
-                    point: LatLng(21.05331612310779, 105.7799679029661),
+                    point: LatLng(21.05229, 105.77977),
                     width: 80,
                     height: 80,
                     builder: (context) => IconButton(
@@ -78,19 +155,22 @@ class _MapScreenState extends State<MapScreen> {
                       iconSize: 45,
                     ),
                   ),
+                  // Second Marker
                   Marker(
-                    point: LatLng(21.05481566372693, 105.78049783495892),
+                    point: LatLng(21.000041, 105.79954),
                     width: 80,
                     height: 80,
                     builder: (context) => IconButton(
                       onPressed: () {},
                       icon: const Icon(Icons.location_on),
-                      color: Colors.lightBlue,
+                      color: Colors.blue,
                       iconSize: 45,
                     ),
                   ),
                 ],
               ),
+
+              // ĐƯỜNG NỐI CÁC ĐIỂM  POLYLINE
               PolylineLayer(
                 polylineCulling: false,
                 polylines: [
@@ -99,9 +179,10 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
-          // BUTTON TOP OF SCREEN
+
+          // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
           Positioned(
-            top: 30,
+            top: 3,
             left: 10,
             child: Row(
               children: [
@@ -131,21 +212,94 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ),
-          // BUTTON UNDER SCREEN
           Positioned(
-            top: 400,
-            right: 10,
+            top: 3,
+            right: 5,
             child: Column(
               children: [
-                FloatingActionButton(
-                  backgroundColor: Colors.green,
-                  onPressed: () => getCoordinates(),
-                  child: const Icon(
-                    Icons.my_location,
-                    color: Colors.white,
+                AnimatedContainer(
+                  duration: Duration(
+                      milliseconds: 300), // Set the duration of the animation
+                  height: isExpanded
+                      ? 100
+                      : 60, // Adjust the width based on the expansion state
+                  width: 60,
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        isExpanded =
+                            !isExpanded; // Toggle the expansion state when pressed
+                      });
+                    },
+                    backgroundColor: Colors.grey,
+                    child: isExpanded
+                        ? Icon(
+                            Icons.close,
+                            color: Colors.white,
+                          )
+                        : Icon(
+                            Icons.settings,
+                            color: Colors.white,
+                          ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                if (isExpanded) ...[
+                  SizedBox(height: 8), // Add some spacing between the buttons
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Handle the second button tap
+                    },
+                    backgroundColor: Colors.blueGrey,
+                    child: Icon(
+                      Icons.local_gas_station,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 8), // Add some spacing between the buttons
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Handle the third button tap
+                    },
+                    backgroundColor: Colors.blueGrey,
+                    child: Icon(
+                      Icons.two_wheeler,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 8), // Add some spacing between the buttons
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Handle the third button tap
+                    },
+                    backgroundColor: Colors.blueGrey,
+                    child: Icon(
+                      Icons.local_shipping,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 8), // Add some spacing between the buttons
+                  FloatingActionButton(
+                    onPressed: () {
+                      // Handle the third button tap
+                    },
+                    backgroundColor: Colors.blueGrey,
+                    child: Icon(
+                      Icons.directions_car,
+                      color: Colors.white,
+                    ),
+                  ),
+                  // Add more Floating Action Buttons as needed
+                ],
+              ],
+            ),
+          ),
+
+          // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
+          Positioned(
+            top: 430,
+            right: 5,
+            child: Column(
+              children: [
                 FloatingActionButton(
                   backgroundColor: Colors.blueAccent,
                   onPressed: handleButtonPress,
@@ -157,6 +311,68 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ),
+
+          // NÚT ZOOM IN + OUT
+          Positioned(
+            top: 375,
+            left: 12,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 40, // Specify the desired width
+                  height: 40, // Specify the desired height
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.blueGrey.shade300,
+                    onPressed: () => currentLoc(),
+                    child: const Icon(
+                      Icons.zoom_out_map,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Positioned(
+            top: 330,
+            left: 12,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 40, // Specify the desired width
+                  height: 40, // Specify the desired height
+                  child: FloatingActionButton(
+                    backgroundColor: Colors.blueGrey.shade300,
+                    onPressed: () => currentLoc(),
+                    child: const Icon(
+                      Icons.zoom_in_map,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // NÚT GET LOCATION HIỆN TẠI
+          Positioned(
+            top: 430,
+            left: 5,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  backgroundColor: Colors.green,
+                  onPressed: () => currentLoc(),
+                  child: const Icon(
+                    Icons.my_location,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          //THANH BOTTOM BAR - THANH ĐIỀU HƯỚNG BÊN DƯỚI
           Positioned(
             bottom: 0,
             left: 0,
@@ -166,7 +382,7 @@ class _MapScreenState extends State<MapScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
-                height: _isBottomSheetExpanded ? 350 : 55,
+                height: _isBottomSheetExpanded ? 300 : 48,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius:
@@ -195,7 +411,8 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0,vertical: 0.1),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0, vertical: 0.1),
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: 'Where to ?',
