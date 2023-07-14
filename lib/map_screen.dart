@@ -116,13 +116,13 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'MAP_SKYSOFT',
-          style: TextStyle(
-            fontStyle: FontStyle.italic,
-          ),
+        backgroundColor: Colors.grey.shade700,
+        title: Image.network(
+          'https://tracking.skysoft.vn/img/skysoft_logo.png', // Replace with the correct image path
+          fit: BoxFit.fitHeight, // Adjust the fit according to your needs
+          width: 250, // Adjust the width as desired
+          height: 45, // Adjust the height as desired
         ),
-        backgroundColor: Colors.blueGrey,
       ),
       drawer: Sidebar(onClose: toggleSidebar),
       body: Stack(
@@ -130,7 +130,7 @@ class _MapScreenState extends State<MapScreen> {
           FlutterMap(
             options: MapOptions(
                 zoom: 15,
-                center: LatLng(9.419846399204014, 105.62851753615416)),
+                center: LatLng(21.036939431945548, 105.83467448647559)),
             mapController: mapController,
             nonRotatedChildren: [],
             children: [
@@ -157,14 +157,14 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   // Second Marker
                   Marker(
-                    point: LatLng(21.000041, 105.79954),
+                    point: LatLng(21.036939431945548, 105.83467448647559),
                     width: 80,
                     height: 80,
                     builder: (context) => IconButton(
                       onPressed: () {},
-                      icon: const Icon(Icons.location_on),
-                      color: Colors.blue,
-                      iconSize: 45,
+                      icon: const Icon(Icons.flag),
+                      color: Colors.redAccent,
+                      iconSize: 35,
                     ),
                   ),
                 ],
@@ -244,7 +244,7 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
                 if (isExpanded) ...[
-                  SizedBox(height: 8), // Add some spacing between the buttons
+                  SizedBox(height: 2), // Add some spacing between the buttons
                   FloatingActionButton(
                     onPressed: () {
                       // Handle the second button tap
