@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'SiderBar.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
@@ -115,6 +116,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //THANH TOP BAR
       appBar: AppBar(
         backgroundColor: Colors.grey.shade700,
         title: Image.network(
@@ -125,436 +127,439 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
       drawer: Sidebar(onClose: toggleSidebar),
-      body: Stack(
-        children: [
-          FlutterMap(
-            options: MapOptions(
-                zoom: 15,
-                center: LatLng(21.036939431945548, 105.83467448647559)),
-            mapController: mapController,
-            nonRotatedChildren: [],
-            children: [
-              TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-                userAgentPackageName: 'dev.fleaflet.flutter_map.example',
-              ),
+      // THANH BOTTOM BAR BUTTON BÊN TRONG CUỐI CÙNG
+      body: SlidingUpPanel(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+        panelBuilder: (ScrollController sc) => _scrollingList(sc),
+        // BẢN ĐỒ VÀ CÁC NÚT
+        body: Stack(
+          children: [
+            FlutterMap(
+              options: MapOptions(
+                  zoom: 15,
+                  center: LatLng(21.036939431945548, 105.83467448647559)),
+              mapController: mapController,
+              nonRotatedChildren: const [],
+              children: [
+                TileLayer(
+                  urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  userAgentPackageName: 'dev.fleaflet.flutter_map.example',
+                ),
 
-              // ĐIỂM ĐÁNH DẤU MARKER
-              MarkerLayer(
-                rotate: true,
-                markers: [
-                  // First Marker
-                  Marker(
-                    point: LatLng(21.05229, 105.77977),
-                    width: 80,
-                    height: 80,
-                    builder: (context) => IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.navigation),
-                      color: Colors.green,
-                      iconSize: 45,
+                // ĐIỂM ĐÁNH DẤU MARKER
+                MarkerLayer(
+                  rotate: true,
+                  markers: [
+                    // First Marker
+                    Marker(
+                      point: LatLng(21.05229, 105.77977),
+                      width: 80,
+                      height: 80,
+                      builder: (context) => IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.navigation),
+                        color: Colors.green,
+                        iconSize: 45,
+                      ),
+                    ),
+                    // Second Marker
+                    Marker(
+                      point: LatLng(21.036939431945548, 105.83467448647559),
+                      width: 80,
+                      height: 80,
+                      builder: (context) => IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.flag),
+                        color: Colors.redAccent,
+                        iconSize: 35,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ĐƯỜNG NỐI CÁC ĐIỂM  POLYLINE
+                PolylineLayer(
+                  polylineCulling: false,
+                  polylines: [
+                    Polyline(
+                        points: points, color: Colors.black, strokeWidth: 5),
+                  ],
+                ),
+              ],
+            ),
+
+            // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
+            Positioned(
+              top: 3,
+              left: 10,
+              child: Row(
+                children: [
+                  FloatingActionButton(
+                    backgroundColor: Colors.cyan,
+                    onPressed: handleButtonPress,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.speed),
+                        Text("60km"),
+                      ],
                     ),
                   ),
-                  // Second Marker
-                  Marker(
-                    point: LatLng(21.036939431945548, 105.83467448647559),
-                    width: 80,
-                    height: 80,
-                    builder: (context) => IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.flag),
-                      color: Colors.redAccent,
-                      iconSize: 35,
+                  const SizedBox(width: 10),
+                  FloatingActionButton(
+                    backgroundColor: Colors.redAccent,
+                    onPressed: handleButtonPress,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.warning),
+                        Text("80km"),
+                      ],
                     ),
                   ),
                 ],
               ),
-
-              // ĐƯỜNG NỐI CÁC ĐIỂM  POLYLINE
-              PolylineLayer(
-                polylineCulling: false,
-                polylines: [
-                  Polyline(points: points, color: Colors.black, strokeWidth: 5),
+            ),
+            Positioned(
+              top: 3,
+              right: 5,
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(
+                        milliseconds: 300), // Set the duration of the animation
+                    height: isExpanded
+                        ? 100
+                        : 60, // Adjust the width based on the expansion state
+                    width: 60,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        setState(() {
+                          isExpanded =
+                              !isExpanded; // Toggle the expansion state when pressed
+                        });
+                      },
+                      backgroundColor: Colors.grey,
+                      child: isExpanded
+                          ? const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                            )
+                          : const Icon(
+                              Icons.track_changes,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
+                  if (isExpanded) ...[
+                    const SizedBox(
+                        height: 2), // Add some spacing between the buttons
+                    FloatingActionButton(
+                      onPressed: () {
+                        // Handle the second button tap
+                      },
+                      backgroundColor: Colors.blueGrey,
+                      child: const Icon(
+                        Icons.local_gas_station,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
+                    FloatingActionButton(
+                      onPressed: () {
+                        // Handle the third button tap
+                      },
+                      backgroundColor: Colors.blueGrey,
+                      child: const Icon(
+                        Icons.two_wheeler,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
+                    FloatingActionButton(
+                      onPressed: () {
+                        // Handle the third button tap
+                      },
+                      backgroundColor: Colors.blueGrey,
+                      child: const Icon(
+                        Icons.local_shipping,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
+                    FloatingActionButton(
+                      onPressed: () {
+                        // Handle the third button tap
+                      },
+                      backgroundColor: Colors.blueGrey,
+                      child: const Icon(
+                        Icons.directions_car,
+                        color: Colors.white,
+                      ),
+                    ),
+                    // Add more Floating Action Buttons as needed
+                  ],
                 ],
               ),
-            ],
-          ),
-
-          // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
-          Positioned(
-            top: 3,
-            left: 10,
-            child: Row(
-              children: [
-                FloatingActionButton(
-                  backgroundColor: Colors.cyan,
-                  onPressed: handleButtonPress,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(Icons.speed),
-                      Text("60km"),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                FloatingActionButton(
-                  backgroundColor: Colors.redAccent,
-                  onPressed: handleButtonPress,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(Icons.warning),
-                      Text("80km"),
-                    ],
-                  ),
-                ),
-              ],
             ),
-          ),
-          Positioned(
-            top: 3,
-            right: 5,
-            child: Column(
-              children: [
-                AnimatedContainer(
-                  duration: Duration(
-                      milliseconds: 300), // Set the duration of the animation
-                  height: isExpanded
-                      ? 100
-                      : 60, // Adjust the width based on the expansion state
-                  width: 60,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      setState(() {
-                        isExpanded =
-                            !isExpanded; // Toggle the expansion state when pressed
-                      });
-                    },
-                    backgroundColor: Colors.grey,
-                    child: isExpanded
-                        ? Icon(
-                            Icons.close,
-                            color: Colors.white,
-                          )
-                        : Icon(
-                            Icons.track_changes,
-                            color: Colors.white,
-                          ),
-                  ),
-                ),
-                if (isExpanded) ...[
-                  SizedBox(height: 2), // Add some spacing between the buttons
+
+            // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
+            Positioned(
+              top: 400,
+              right: 5,
+              child: Column(
+                children: [
                   FloatingActionButton(
-                    onPressed: () {
-                      // Handle the second button tap
-                    },
-                    backgroundColor: Colors.blueGrey,
-                    child: Icon(
-                      Icons.local_gas_station,
+                    backgroundColor: Colors.blueAccent,
+                    onPressed: handleButtonPress,
+                    child: const Icon(
+                      Icons.shortcut,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8), // Add some spacing between the buttons
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Handle the third button tap
-                    },
-                    backgroundColor: Colors.blueGrey,
-                    child: Icon(
-                      Icons.two_wheeler,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8), // Add some spacing between the buttons
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Handle the third button tap
-                    },
-                    backgroundColor: Colors.blueGrey,
-                    child: Icon(
-                      Icons.local_shipping,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8), // Add some spacing between the buttons
-                  FloatingActionButton(
-                    onPressed: () {
-                      // Handle the third button tap
-                    },
-                    backgroundColor: Colors.blueGrey,
-                    child: Icon(
-                      Icons.directions_car,
-                      color: Colors.white,
-                    ),
-                  ),
-                  // Add more Floating Action Buttons as needed
                 ],
-              ],
+              ),
             ),
-          ),
 
-          // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
-          Positioned(
-            top: 430,
-            right: 5,
-            child: Column(
-              children: [
-                FloatingActionButton(
-                  backgroundColor: Colors.blueAccent,
-                  onPressed: handleButtonPress,
-                  child: const Icon(
-                    Icons.shortcut,
-                    color: Colors.white,
+            // NÚT ZOOM IN + OUT
+            Positioned(
+              top: 350,
+              left: 12,
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: 40, // Specify the desired width
+                    height: 40, // Specify the desired height
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.blueGrey.shade300,
+                      onPressed: () {
+                        mapController.move(
+                            mapController.center, mapController.zoom + 1);
+                      },
+                      child: const Icon(
+                        Icons.zoom_out_map,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // NÚT ZOOM IN + OUT
-          Positioned(
-            top: 375,
-            left: 12,
-            child: Column(
-              children: [
-                SizedBox(
-                  width: 40, // Specify the desired width
-                  height: 40, // Specify the desired height
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.blueGrey.shade300,
+            Positioned(
+              top: 300,
+              left: 12,
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: 40, // Specify the desired width
+                    height: 40, // Specify the desired height
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.blueGrey.shade300,
+                      onPressed: () {
+                        mapController.move(
+                            mapController.center, mapController.zoom - 1);
+                      },
+                      child: const Icon(
+                        Icons.zoom_in_map,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // NÚT GET LOCATION HIỆN TẠI
+            Positioned(
+              top: 400,
+              left: 5,
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                    backgroundColor: Colors.green,
                     onPressed: () => currentLoc(),
                     child: const Icon(
-                      Icons.zoom_out_map,
+                      Icons.my_location,
                       color: Colors.white,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          Positioned(
-            top: 330,
-            left: 12,
-            child: Column(
-              children: [
-                SizedBox(
-                  width: 40, // Specify the desired width
-                  height: 40, // Specify the desired height
-                  child: FloatingActionButton(
-                    backgroundColor: Colors.blueGrey.shade300,
-                    onPressed: () => currentLoc(),
-                    child: const Icon(
-                      Icons.zoom_in_map,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // NÚT GET LOCATION HIỆN TẠI
-          Positioned(
-            top: 430,
-            left: 5,
-            child: Column(
-              children: [
-                FloatingActionButton(
-                  backgroundColor: Colors.green,
-                  onPressed: () => currentLoc(),
-                  child: const Icon(
-                    Icons.my_location,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          //THANH BOTTOM BAR - THANH ĐIỀU HƯỚNG BÊN DƯỚI
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: GestureDetector(
-              onTap: toggleBottomSheet,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                height: _isBottomSheetExpanded ? 300 : 48,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(16.0)),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Container(
-                        child: ListTile(
-                          leading: Icon(Icons.unfold_more),
-                          title: Text(
-                            'FIND THE PLACE HERE !!!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.unfold_more),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10.0, vertical: 0.1),
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Where to ?',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20.0),
-                            ),
-                            prefixIcon:
-                                Icon(Icons.search, color: Colors.blueAccent),
-                            suffixIcon: Icon(Icons.mic, color: Colors.red),
-                            filled: true,
-                            fillColor: Colors.grey[200],
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey[300]!,
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.home,
-                            color: Colors.pink,
-                          ),
-                          title: Text(
-                            'Home',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Set once and go',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey[300]!,
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.work,
-                            color: Colors.brown,
-                          ),
-                          title: Text(
-                            'Work',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Set once and go',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey[300]!,
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.directions_car,
-                            color: Colors.cyan,
-                          ),
-                          title: Text(
-                            'Drive to friend & family',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Search contacts',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey[300]!,
-                              width: 1.0,
-                            ),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.calendar_month,
-                            color: Colors.redAccent,
-                          ),
-                          title: Text(
-                            'Connect calendar',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Sync your calendar for route planning',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+// THANH BOTTOM BAR !
+  Widget _scrollingList(ScrollController sc) {
+    return Stack(
+      children: [
+        Positioned(
+          child: GestureDetector(
+            onTap: toggleBottomSheet,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Icon(
+                          Icons.horizontal_rule,
+                          color: Colors.grey,
+                          size: 35, // Adjust the size of the icon as desired
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 0.1),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Where to ?',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.blueAccent),
+                        suffixIcon: const Icon(Icons.mic, color: Colors.red),
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.home,
+                        color: Colors.pink,
+                      ),
+                      title: Text(
+                        'Home',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Set once and go',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.work,
+                        color: Colors.brown,
+                      ),
+                      title: Text(
+                        'Work',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Set once and go',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.directions_car,
+                        color: Colors.cyan,
+                      ),
+                      title: Text(
+                        'Drive to friend & family',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Search contacts',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey[300]!,
+                          width: 1.0,
+                        ),
+                      ),
+                    ),
+                    child: const ListTile(
+                      leading: Icon(
+                        Icons.calendar_month,
+                        color: Colors.redAccent,
+                      ),
+                      title: Text(
+                        'Connect calendar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Sync your calendar for route planning',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
