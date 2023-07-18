@@ -22,8 +22,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _isBottomSheetExpanded = false;
   bool _isSidebarOpen = false;
   bool isExpanded = false;
+  List<Marker> markers = [];
   List listOfPoints = []; // Track the expansion state of the button
-  LatLng curloca = new LatLng(21.000041, 105.79954);
+  LatLng curloca = new LatLng(21.03276589493197, 105.83989509524008);
 
   void toggleSidebar() {
     setState(() {
@@ -37,19 +38,50 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  getCoordinates() async {
-    // Requesting for openrouteservice api
-    var response = await http
-        .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
-    setState(() {
-      if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        listOfPoints = data['features'][0]['geometry']['coordinates'];
-        points = listOfPoints
-            .map((p) => LatLng(p[1].toDouble(), p[0].toDouble()))
-            .toList();
-      }
-    });
+// NỐI 2 ĐIỂM !
+  // getCoordinates() async {
+  //   // Requesting for openrouteservice api
+  //   var response = await http
+  //       .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
+  //   setState(() {
+  //     if (response.statusCode == 200) {
+  //       var data = jsonDecode(response.body);
+  //       listOfPoints = data['features'][0]['geometry']['coordinates'];
+  //       points = listOfPoints
+  //           .map((p) => LatLng(p[1].toDouble(), p[0].toDouble()))
+  //           .toList();
+  //     }
+  //   });
+  // }
+
+  @override
+  void initState() {
+    super.initState();
+    markers.addAll([
+      Marker(
+        point: LatLng(21.03276589493197, 105.83989509524008),
+        width: 80,
+        height: 80,
+        builder: (context) => IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.flag),
+          color: Colors.red,
+          iconSize: 45,
+        ),
+      ),
+      Marker(
+        point: LatLng(21.052866980721852, 105.77987062937136),
+        width: 80,
+        height: 80,
+        builder: (context) => IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.navigation),
+          color: Colors.green,
+          iconSize: 45,
+        ),
+      ),
+      // Add more markers as needed
+    ]);
   }
 
   @override
@@ -110,12 +142,6 @@ class _MapScreenState extends State<MapScreen> {
     // Perform the desired action when the button is pressed
   }
 
-  void toggleBottomSheet() {
-    setState(() {
-      _isBottomSheetExpanded = !_isBottomSheetExpanded;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,7 +166,7 @@ class _MapScreenState extends State<MapScreen> {
             FlutterMap(
               options: MapOptions(
                   zoom: 15,
-                  center: LatLng(21.036939431945548, 105.83467448647559)),
+                  center: LatLng(21.03283599324495, 105.8398736375679)),
               mapController: mapController,
               nonRotatedChildren: const [],
               children: [
@@ -152,42 +178,17 @@ class _MapScreenState extends State<MapScreen> {
                 // ĐIỂM ĐÁNH DẤU MARKER
                 MarkerLayer(
                   rotate: true,
-                  markers: [
-                    // First Marker
-                    Marker(
-                      point: LatLng(21.05229, 105.77977),
-                      width: 80,
-                      height: 80,
-                      builder: (context) => IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.navigation),
-                        color: Colors.green,
-                        iconSize: 45,
-                      ),
-                    ),
-                    // Second Marker
-                    Marker(
-                      point: LatLng(21.036939431945548, 105.83467448647559),
-                      width: 80,
-                      height: 80,
-                      builder: (context) => IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.flag),
-                        color: Colors.redAccent,
-                        iconSize: 35,
-                      ),
-                    ),
-                  ],
+                  markers: markers,
                 ),
 
                 // ĐƯỜNG NỐI CÁC ĐIỂM  POLYLINE
-                PolylineLayer(
-                  polylineCulling: false,
-                  polylines: [
-                    Polyline(
-                        points: points, color: Colors.black, strokeWidth: 5),
-                  ],
-                ),
+                // PolylineLayer(
+                //   polylineCulling: false,
+                //   polylines: [
+                //     Polyline(
+                //         points: points, color: Colors.black, strokeWidth: 5),
+                //   ],
+                // ),
               ],
             ),
 
@@ -349,29 +350,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT ZOOM IN + OUT
-            Positioned(
-              top: 350,
-              left: 12,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 40, // Specify the desired width
-                    height: 40, // Specify the desired height
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.blueGrey.shade300,
-                      onPressed: () {
-                        mapController.move(
-                            mapController.center, mapController.zoom + 1);
-                      },
-                      child: const Icon(
-                        Icons.zoom_out_map,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
             Positioned(
               top: 300,
@@ -396,9 +374,31 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
+            Positioned(
+              top: 350,
+              left: 12,
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: 40, // Specify the desired width
+                    height: 40, // Specify the desired height
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.blueGrey.shade300,
+                      onPressed: () {
+                        mapController.move(
+                            mapController.center, mapController.zoom + 1);
+                      },
+                      child: const Icon(
+                        Icons.zoom_out_map,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
             // NÚT GET LOCATION HIỆN TẠI
-
             Positioned(
               top: 400,
               left: 5,
@@ -406,23 +406,10 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.green,
-                    onPressed: () {
-                      mapController.move(
-                        LatLng(21.05229, 105.77977),
-                        mapController.zoom,
-                      );
-                    },
-                    tooltip: 'Center First Marker',
-                    child: const Icon(
-                      Icons.my_location,
-                      color: Colors.white,
-                    ),
-                  ),
-                  FloatingActionButton(
                     onPressed: () => currentLoc(),
                     tooltip: 'Get Current Location',
                     child: const Icon(
-                      Icons.location_searching,
+                      Icons.my_location,
                       color: Colors.white,
                     ),
                   ),
@@ -441,7 +428,6 @@ class _MapScreenState extends State<MapScreen> {
       children: [
         Positioned(
           child: GestureDetector(
-            onTap: toggleBottomSheet,
             child: SingleChildScrollView(
               child: Column(
                 children: [
