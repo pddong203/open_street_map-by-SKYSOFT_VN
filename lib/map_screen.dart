@@ -99,7 +99,10 @@ class _MapScreenState extends State<MapScreen> {
     Position data = await _determinePosition();
     log(data.latitude.toString());
     log(data.longitude.toString());
-    curloca = new LatLng(data.latitude, data.longitude);
+    setState(() {
+      curloca = LatLng(data.latitude, data.longitude);
+      points.add(curloca); // Add the current location as a new point
+    });
     mapController.move(curloca, mapController.zoom);
   }
 
@@ -229,7 +232,7 @@ class _MapScreenState extends State<MapScreen> {
                     duration: const Duration(
                         milliseconds: 300), // Set the duration of the animation
                     height: isExpanded
-                        ? 100
+                        ? 80
                         : 60, // Adjust the width based on the expansion state
                     width: 60,
                     child: FloatingActionButton(
@@ -239,7 +242,7 @@ class _MapScreenState extends State<MapScreen> {
                               !isExpanded; // Toggle the expansion state when pressed
                         });
                       },
-                      backgroundColor: Colors.grey,
+                      backgroundColor: Colors.amber,
                       child: isExpanded
                           ? const Icon(
                               Icons.close,
@@ -307,6 +310,27 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
+
+            // NÚT XOAY BẢN ĐỒ
+            Positioned(
+                top: 350,
+                right: 12,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey.shade300,
+                        onPressed: () {
+                          mapController.rotate(mapController.rotation + 90);
+                        },
+                        tooltip: 'Rotate Map',
+                        child: const Icon(Icons.rotate_right),
+                      ),
+                    ),
+                  ],
+                )),
             Positioned(
               top: 400,
               right: 5,
@@ -374,6 +398,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT GET LOCATION HIỆN TẠI
+
             Positioned(
               top: 400,
               left: 5,
@@ -381,9 +406,23 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.green,
-                    onPressed: () => currentLoc(),
+                    onPressed: () {
+                      mapController.move(
+                        LatLng(21.05229, 105.77977),
+                        mapController.zoom,
+                      );
+                    },
+                    tooltip: 'Center First Marker',
                     child: const Icon(
                       Icons.my_location,
+                      color: Colors.white,
+                    ),
+                  ),
+                  FloatingActionButton(
+                    onPressed: () => currentLoc(),
+                    tooltip: 'Get Current Location',
+                    child: const Icon(
+                      Icons.location_searching,
                       color: Colors.white,
                     ),
                   ),
