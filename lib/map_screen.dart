@@ -39,19 +39,38 @@ class _MapScreenState extends State<MapScreen> {
   }
 
 // NỐI 2 ĐIỂM !
-  // getCoordinates() async {
-  //   // Requesting for openrouteservice api
-  //   var response = await http
-  //       .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
-  //   setState(() {
-  //     if (response.statusCode == 200) {
-  //       var data = jsonDecode(response.body);
-  //       listOfPoints = data['features'][0]['geometry']['coordinates'];
-  //       points = listOfPoints
-  //           .map((p) => LatLng(p[1].toDouble(), p[0].toDouble()))
-  //           .toList();
-  //     }
-  //   });
+  getCoordinates() async {
+    // Requesting for openrouteservice api
+    var response = await http
+        .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
+    setState(() {
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        listOfPoints = data['features'][0]['geometry']['coordinates'];
+        points = listOfPoints
+            .map((p) => LatLng(p[1].toDouble(), p[0].toDouble()))
+            .toList();
+      }
+    });
+  }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   markers = []; // Clear existing markers
+  //   markers.add(
+  //     Marker(
+  //       point: LatLng(21.03276589493197, 105.83989509524008),
+  //       width: 80,
+  //       height: 80,
+  //       builder: (context) => IconButton(
+  //         onPressed: () {},
+  //         icon: const Icon(Icons.flag),
+  //         color: Colors.redAccent,
+  //         iconSize: 45,
+  //       ),
+  //     ),
+  //   );
   // }
 
   @override
@@ -65,22 +84,10 @@ class _MapScreenState extends State<MapScreen> {
         builder: (context) => IconButton(
           onPressed: () {},
           icon: const Icon(Icons.flag),
-          color: Colors.red,
+          color: Colors.redAccent,
           iconSize: 45,
         ),
       ),
-      Marker(
-        point: LatLng(21.052866980721852, 105.77987062937136),
-        width: 80,
-        height: 80,
-        builder: (context) => IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.navigation),
-          color: Colors.green,
-          iconSize: 45,
-        ),
-      ),
-      // Add more markers as needed
     ]);
   }
 
@@ -134,9 +141,27 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       curloca = LatLng(data.latitude, data.longitude);
       points.add(curloca); // Add the current location as a new point
+      markers.removeWhere((marker) =>
+          marker.builder ==
+          navigationMarkerBuilder); // Remove the navigation marker
+      markers.add(
+        Marker(
+          point: curloca,
+          width: 80,
+          height: 80,
+          builder: navigationMarkerBuilder, // Use the navigation marker builder
+        ),
+      );
+      mapController.move(curloca, 18.0);
     });
-    mapController.move(curloca, mapController.zoom);
   }
+
+  static final navigationMarkerBuilder = (BuildContext context) => IconButton(
+        onPressed: () {},
+        icon: const Icon(Icons.navigation),
+        color: Colors.green,
+        iconSize: 45,
+      );
 
   void handleButtonPress() {
     // Perform the desired action when the button is pressed
@@ -186,7 +211,9 @@ class _MapScreenState extends State<MapScreen> {
                 //   polylineCulling: false,
                 //   polylines: [
                 //     Polyline(
-                //         points: points, color: Colors.black, strokeWidth: 5),
+                //         points: points,
+                //         color: Colors.blueAccent,
+                //         strokeWidth: 5),
                 //   ],
                 // ),
               ],
@@ -350,7 +377,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT ZOOM IN + OUT
-
             Positioned(
               top: 300,
               left: 12,
@@ -406,7 +432,9 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.green,
-                    onPressed: () => currentLoc(),
+                    onPressed: () => {
+                      currentLoc(),
+                    },
                     tooltip: 'Get Current Location',
                     child: const Icon(
                       Icons.my_location,
