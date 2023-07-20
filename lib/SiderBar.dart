@@ -7,77 +7,92 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      width: MediaQuery.of(context).size.width,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            child: Container(
-              width: 200, // Adjust the width to make the decoration smaller
-              height: 100, // Adjust the height to make the decoration smaller
-              child: Stack(
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Image.network(
-                              'https://play-lh.googleusercontent.com/RIU1oM-b4OadLlOuvhwvuzjw1fVh54gHNq-CQfT2UdOzOG6rajBVqPm3wkkKirxyPr0=w300', // Replace with the correct image path
-                              width: 50, // Adjust the width as desired
-                              height: 45,
-                              fit: BoxFit
-                                  .fitHeight, // Adjust the height as desired
-                            ),
-                            SizedBox(
-                              width: 15,
-                            ),
-                            Text(
-                              'Login here!',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 30,
-                                fontStyle:
-                                    FontStyle.italic, // Make the text italic
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade400,
-                            borderRadius: BorderRadius.circular(30),
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Image.network(
+                            'https://play-lh.googleusercontent.com/RIU1oM-b4OadLlOuvhwvuzjw1fVh54gHNq-CQfT2UdOzOG6rajBVqPm3wkkKirxyPr0=w300',
+                            // Replace with the correct image path
+                            width: 90,
+                            // Adjust the width as desired
+                            height: 70,
+                            fit: BoxFit.contain,
+                            // Adjust the height as desired
                           ),
-                          child: TextButton(
-                            onPressed: () {
-                              // Handle the View Profile button tap
-                            },
-                            child: Text(
-                              'View Profile',
-                              style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontSize: 15,
-                              ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Text(
+                            'Hey SKYSOFT!',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 25,
+                              fontStyle: FontStyle.normal,
+                              // Make the text italic
                             ),
                           ),
-                        )
-                      ],
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            // Handle the View Profile button tap
+                          },
+                          child: const Text(
+                            'View Profile',
+                            style: TextStyle(
+                              color: Colors.blueAccent,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      onClose();
+                    },
+                    child: Icon(
+                      Icons.close,
+                      // Replace with your desired close icon
+                      color: Colors.black,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           ListTile(
-            leading: Icon(
-              Icons.route,
+            leading: const Icon(
+              Icons.map,
               color: Colors.black,
             ), // Add an icon for the "Plan a drive" ListTile
-            title: Text(
+            title: const Text(
               'Plan a drive',
               style: TextStyle(
                 fontWeight: FontWeight.bold, // Make the text bold
@@ -88,11 +103,11 @@ class Sidebar extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.inbox,
               color: Colors.black,
             ), // Add an icon for the "Inbox" ListTile
-            title: Text(
+            title: const Text(
               'Inbox',
               style: TextStyle(
                 fontWeight: FontWeight.bold, // Make the text bold
@@ -103,11 +118,11 @@ class Sidebar extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.settings,
               color: Colors.black,
             ), // Add an icon for the "Setting" ListTile
-            title: Text(
+            title: const Text(
               'Setting',
               style: TextStyle(
                 fontWeight: FontWeight.bold, // Make the text bold
@@ -118,11 +133,11 @@ class Sidebar extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.help,
               color: Colors.black,
             ), // Add an icon for the "Help and feedback" ListTile
-            title: Text(
+            title: const Text(
               'Help and feedback',
               style: TextStyle(
                 fontWeight: FontWeight.bold, // Make the text bold
@@ -131,11 +146,11 @@ class Sidebar extends StatelessWidget {
             onTap: () {},
           ),
           ListTile(
-            leading: Icon(
+            leading: const Icon(
               Icons.power_settings_new,
               color: Colors.black,
             ), // Add an icon for the "Plan a drive" ListTile
-            title: Text(
+            title: const Text(
               'Sleep mode',
               style: TextStyle(
                 fontWeight: FontWeight.bold, // Make the text bold
@@ -145,6 +160,24 @@ class Sidebar extends StatelessWidget {
               // Handle item 1 tap
             },
           ),
+          // ListTile(
+          //   leading: const Icon(
+          //     Icons.close, // Replace with your desired close icon
+          //     color: Colors.black,
+          //   ),
+          //   title: const Text(
+          //     'Close Sidebar', // Replace with your desired title for the close icon
+          //     style: TextStyle(
+          //       fontWeight: FontWeight.bold,
+          //     ),
+          //   ),
+          //   onTap: () {
+          //     // Scaffold.of(context).openEndDrawer();
+          //     Navigator.pop(context);
+          //     onClose();
+          //   },
+          // ),
+          // Rest of the ListTiles
         ],
       ),
     );

@@ -24,7 +24,7 @@ class _MapScreenState extends State<MapScreen> {
   bool isExpanded = false;
   List<Marker> markers = [];
   List listOfPoints = []; // Track the expansion state of the button
-  LatLng curloca = new LatLng(21.03276589493197, 105.83989509524008);
+  LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
 
   void toggleSidebar() {
@@ -61,7 +61,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     markers.addAll([
       Marker(
-        point: LatLng(21.03276589493197, 105.83989509524008),
+        point: const LatLng(21.03276589493197, 105.83989509524008),
         width: 80,
         height: 80,
         builder: (context) => IconButton(
@@ -172,6 +172,7 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  // ignore: prefer_function_declarations_over_variables
   static final navigationMarkerBuilder = (BuildContext context) => IconButton(
         onPressed: () {},
         icon: const Icon(Icons.navigation),
@@ -181,25 +182,49 @@ class _MapScreenState extends State<MapScreen> {
 
   void handleButtonPress() {}
 
-  LatLng route = LatLng(0, 0);
+  LatLng route = const LatLng(0, 0);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //THANH TOP BAR
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade700,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         title: Image.network(
-          'https://tracking.skysoft.vn/img/skysoft_logo.png', // Replace with the correct image path
-          fit: BoxFit.fitHeight, // Adjust the fit according to your needs
-          width: 250, // Adjust the width as desired
-          height: 45, // Adjust the height as desired
+          'https://tracking.skysoft.vn/img/skysoft_logo.png',
+          fit: BoxFit.fitHeight,
+          width: 250,
+          height: 56,
+        ),
+        leading: Builder(
+          builder: (BuildContext context) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.menu,
+                ),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+              ),
+            );
+          },
         ),
       ),
-      drawer: Sidebar(onClose: toggleSidebar),
+      drawer: Sidebar(
+        onClose: toggleSidebar,
+      ),
       // THANH BOTTOM BAR BUTTON BÊN TRONG CUỐI CÙNG
       body: SlidingUpPanel(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25.0)),
         panelBuilder: (ScrollController sc) => _scrollingList(sc),
         // BẢN ĐỒ VÀ CÁC NÚT
         body: Stack(
@@ -208,7 +233,7 @@ class _MapScreenState extends State<MapScreen> {
               options: MapOptions(
                   onTap: (tapPosition, point) => handleMapTap(point),
                   zoom: 15,
-                  center: LatLng(21.03283599324495, 105.8398736375679)),
+                  center: const LatLng(21.03283599324495, 105.8398736375679)),
               mapController: mapController,
               children: [
                 TileLayer(
@@ -226,8 +251,8 @@ class _MapScreenState extends State<MapScreen> {
 
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
             Positioned(
-              top: 3,
-              left: 10,
+              top: 85,
+              left: 5,
               child: Row(
                 children: [
                   FloatingActionButton(
@@ -241,7 +266,7 @@ class _MapScreenState extends State<MapScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 5),
                   FloatingActionButton(
                     backgroundColor: Colors.redAccent,
                     onPressed: handleButtonPress,
@@ -257,7 +282,7 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
             Positioned(
-              top: 3,
+              top: 85,
               right: 5,
               child: Column(
                 children: [
@@ -275,14 +300,14 @@ class _MapScreenState extends State<MapScreen> {
                               !isExpanded; // Toggle the expansion state when pressed
                         });
                       },
-                      backgroundColor: Colors.amber,
+                      backgroundColor: Colors.grey,
                       child: isExpanded
                           ? const Icon(
                               Icons.close,
                               color: Colors.white,
                             )
                           : const Icon(
-                              Icons.track_changes,
+                              Icons.settings,
                               color: Colors.white,
                             ),
                     ),
@@ -290,69 +315,11 @@ class _MapScreenState extends State<MapScreen> {
                   if (isExpanded) ...[
                     const SizedBox(
                         height: 2), // Add some spacing between the buttons
-                    FloatingActionButton(
-                      onPressed: () {
-                        // Handle the second button tap
-                      },
-                      backgroundColor: Colors.blueGrey,
-                      child: const Icon(
-                        Icons.local_gas_station,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
-                    FloatingActionButton(
-                      onPressed: () {
-                        // Handle the third button tap
-                      },
-                      backgroundColor: Colors.blueGrey,
-                      child: const Icon(
-                        Icons.two_wheeler,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
-                    FloatingActionButton(
-                      onPressed: () {
-                        // Handle the third button tap
-                      },
-                      backgroundColor: Colors.blueGrey,
-                      child: const Icon(
-                        Icons.local_shipping,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
-                    FloatingActionButton(
-                      onPressed: () {
-                        // Handle the third button tap
-                      },
-                      backgroundColor: Colors.blueGrey,
-                      child: const Icon(
-                        Icons.directions_car,
-                        color: Colors.white,
-                      ),
-                    ),
-                    // Add more Floating Action Buttons as needed
-                  ],
-                ],
-              ),
-            ),
-
-            // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
-            Positioned(
-                top: 250,
-                right: 12,
-                child: Column(
-                  children: [
                     SizedBox(
                       width: 40, // Specify the desired width
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey.shade300,
+                        backgroundColor: Colors.blueGrey,
                         onPressed: () async {
                           double lat =
                               curloca.latitude - mapController.center.latitude;
@@ -370,18 +337,13 @@ class _MapScreenState extends State<MapScreen> {
                         child: const Icon(Icons.cached),
                       ),
                     ),
-                  ],
-                )),
-            Positioned(
-                top: 300,
-                right: 12,
-                child: Column(
-                  children: [
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
                     SizedBox(
                       width: 40, // Specify the desired width
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey.shade300,
+                        backgroundColor: Colors.blueGrey,
                         onPressed: () {
                           route = LatLng(mapController.center.latitude + 0.0005,
                               mapController.center.longitude);
@@ -392,19 +354,13 @@ class _MapScreenState extends State<MapScreen> {
                         child: const Icon(Icons.filter_center_focus),
                       ),
                     ),
-                  ],
-                )),
-            // NÚT XOAY BẢN ĐỒ
-            Positioned(
-                top: 350,
-                right: 12,
-                child: Column(
-                  children: [
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
                     SizedBox(
                       width: 40, // Specify the desired width
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey.shade300,
+                        backgroundColor: Colors.blueGrey,
                         onPressed: () {
                           mapController.rotate(mapController.rotation + 90);
                         },
@@ -412,16 +368,69 @@ class _MapScreenState extends State<MapScreen> {
                         child: const Icon(Icons.rotate_right),
                       ),
                     ),
+                    const SizedBox(
+                        height: 8), // Add some spacing between the buttons
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: () {
+                          mapController.move(
+                              mapController.center, mapController.zoom - 1);
+                        },
+                        tooltip: 'ZOOM IN ',
+                        child: const Icon(
+                          Icons.zoom_in_map,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: () {
+                          mapController.move(
+                              mapController.center, mapController.zoom + 1);
+                        },
+                        tooltip: 'ZOOM OUT',
+                        child: const Icon(
+                          Icons.zoom_out_map,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: clearAllMarkers,
+                        tooltip: 'Clear Marker onTAP',
+                        child: const Icon(
+                          Icons.clear_all,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ],
-                )),
+                ],
+              ),
+            ),
+            // NÚT NỐI 2 ĐIỂM !
             Positioned(
-              top: 400,
+              top: 480,
               right: 5,
               child: Column(
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.blueAccent,
                     onPressed: handleButtonPress,
+                    tooltip: 'Polyline',
                     child: const Icon(
                       Icons.route,
                       color: Colors.white,
@@ -431,78 +440,9 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
 
-            // NÚT XÓA MARKER ONTAP trên màn hình
-            Positioned(
-              top: 250,
-              left: 12,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 40, // Specify the desired width
-                    height: 40, // Specify the desired height
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.blueGrey.shade300,
-                      onPressed: clearAllMarkers,
-                      child: const Icon(
-                        Icons.clear_all,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // NÚT ZOOM IN + OUT
-            Positioned(
-              top: 300,
-              left: 12,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 40, // Specify the desired width
-                    height: 40, // Specify the desired height
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.blueGrey.shade300,
-                      onPressed: () {
-                        mapController.move(
-                            mapController.center, mapController.zoom - 1);
-                      },
-                      child: const Icon(
-                        Icons.zoom_in_map,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 350,
-              left: 12,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 40, // Specify the desired width
-                    height: 40, // Specify the desired height
-                    child: FloatingActionButton(
-                      backgroundColor: Colors.blueGrey.shade300,
-                      onPressed: () {
-                        mapController.move(
-                            mapController.center, mapController.zoom + 1);
-                      },
-                      child: const Icon(
-                        Icons.zoom_out_map,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             // NÚT GET LOCATION HIỆN TẠI
             Positioned(
-              top: 400,
+              top: 480,
               left: 5,
               child: Column(
                 children: [
@@ -535,7 +475,7 @@ class _MapScreenState extends State<MapScreen> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Row(
+                  const Row(
                     children: [
                       Expanded(
                         child: Icon(
