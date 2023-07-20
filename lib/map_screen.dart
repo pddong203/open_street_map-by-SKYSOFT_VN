@@ -25,6 +25,7 @@ class _MapScreenState extends State<MapScreen> {
   List<Marker> markers = [];
   List listOfPoints = []; // Track the expansion state of the button
   LatLng curloca = new LatLng(21.03276589493197, 105.83989509524008);
+  List<Marker> tappedMarkers = [];
 
   void toggleSidebar() {
     setState(() {
@@ -38,7 +39,7 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-// NỐI 2 ĐIỂM !
+  // NỐI 2 ĐIỂM !
   getCoordinates() async {
     // Requesting for openrouteservice api
     var response = await http
@@ -54,25 +55,7 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   markers = []; // Clear existing markers
-  //   markers.add(
-  //     Marker(
-  //       point: LatLng(21.03276589493197, 105.83989509524008),
-  //       width: 80,
-  //       height: 80,
-  //       builder: (context) => IconButton(
-  //         onPressed: () {},
-  //         icon: const Icon(Icons.flag),
-  //         color: Colors.redAccent,
-  //         iconSize: 45,
-  //       ),
-  //     ),
-  //   );
-  // }
-
+// set marker có sẵn trên bản đồ !
   @override
   void initState() {
     super.initState();
@@ -91,12 +74,45 @@ class _MapScreenState extends State<MapScreen> {
     ]);
   }
 
+// add marker location trên bản đồ khi OnTap
+  void handleMapTap(LatLng tappedPoint) {
+    setState(() {
+      tappedMarkers.add(
+        // Add the tapped marker to the tappedMarkers list
+        Marker(
+          point: tappedPoint,
+          width: 80,
+          height: 80,
+          builder: (context) => IconButton(
+            onPressed: () => handleMarkerTap(tappedPoint),
+            icon: const Icon(Icons.location_on),
+            color: Colors.blue,
+            iconSize: 45,
+          ),
+        ),
+      );
+    });
+  }
+
+  // Method to handle marker tap
+  void handleMarkerTap(LatLng tappedPoint) {
+    setState(() {
+      tappedMarkers.removeWhere((marker) => marker.point == tappedPoint);
+    });
+  }
+
+  void clearAllMarkers() {
+    setState(() {
+      tappedMarkers.clear();
+    });
+  }
+
   @override
   double? lat;
   double? long;
   String address = "";
 
-// XIN CẦP QUYỀN TRUY CẬP GPS
+  // XIN CẦP QUYỀN TRUY CẬP GPS
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -152,7 +168,7 @@ class _MapScreenState extends State<MapScreen> {
           builder: navigationMarkerBuilder, // Use the navigation marker builder
         ),
       );
-      mapController.move(curloca, 18.0);
+      mapController.move(curloca, 18);
     });
   }
 
@@ -163,9 +179,9 @@ class _MapScreenState extends State<MapScreen> {
         iconSize: 45,
       );
 
-  void handleButtonPress() {
-    // Perform the desired action when the button is pressed
-  }
+  void handleButtonPress() {}
+
+  LatLng route = LatLng(0, 0);
 
   @override
   Widget build(BuildContext context) {
@@ -190,10 +206,10 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             FlutterMap(
               options: MapOptions(
+                  onTap: (tapPosition, point) => handleMapTap(point),
                   zoom: 15,
                   center: LatLng(21.03283599324495, 105.8398736375679)),
               mapController: mapController,
-              nonRotatedChildren: const [],
               children: [
                 TileLayer(
                   urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -203,19 +219,8 @@ class _MapScreenState extends State<MapScreen> {
                 // ĐIỂM ĐÁNH DẤU MARKER
                 MarkerLayer(
                   rotate: true,
-                  markers: markers,
+                  markers: [...markers, ...tappedMarkers],
                 ),
-
-                // ĐƯỜNG NỐI CÁC ĐIỂM  POLYLINE
-                // PolylineLayer(
-                //   polylineCulling: false,
-                //   polylines: [
-                //     Polyline(
-                //         points: points,
-                //         color: Colors.blueAccent,
-                //         strokeWidth: 5),
-                //   ],
-                // ),
               ],
             ),
 
@@ -338,7 +343,57 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT Ở DƯỚI MÀN HÌNH - BUTTON UNDER SCREEN
+            Positioned(
+                top: 250,
+                right: 12,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey.shade300,
+                        onPressed: () async {
+                          double lat =
+                              curloca.latitude - mapController.center.latitude;
+                          double lng = curloca.longitude -
+                              mapController.center.longitude;
 
+                          Offset offset = Offset(lat, lng);
+                          log("Rotate with marker: $lat - $lng - ${offset.dx}");
+
+                          mapController.rotateAroundPoint(
+                              mapController.rotation + 90,
+                              offset: offset);
+                        },
+                        tooltip: 'Rotate with marker',
+                        child: const Icon(Icons.cached),
+                      ),
+                    ),
+                  ],
+                )),
+            Positioned(
+                top: 300,
+                right: 12,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 40, // Specify the desired width
+                      height: 40, // Specify the desired height
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey.shade300,
+                        onPressed: () {
+                          route = LatLng(mapController.center.latitude + 0.0005,
+                              mapController.center.longitude);
+                          mapController.move(route, mapController.zoom);
+                          log("Move: $route");
+                        },
+                        tooltip: 'Route',
+                        child: const Icon(Icons.filter_center_focus),
+                      ),
+                    ),
+                  ],
+                )),
             // NÚT XOAY BẢN ĐỒ
             Positioned(
                 top: 350,
@@ -368,7 +423,7 @@ class _MapScreenState extends State<MapScreen> {
                     backgroundColor: Colors.blueAccent,
                     onPressed: handleButtonPress,
                     child: const Icon(
-                      Icons.shortcut,
+                      Icons.route,
                       color: Colors.white,
                     ),
                   ),
@@ -376,6 +431,27 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
 
+            // NÚT XÓA MARKER ONTAP trên màn hình
+            Positioned(
+              top: 250,
+              left: 12,
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: 40, // Specify the desired width
+                    height: 40, // Specify the desired height
+                    child: FloatingActionButton(
+                      backgroundColor: Colors.blueGrey.shade300,
+                      onPressed: clearAllMarkers,
+                      child: const Icon(
+                        Icons.clear_all,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             // NÚT ZOOM IN + OUT
             Positioned(
               top: 300,
@@ -450,7 +526,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-// THANH BOTTOM BAR !
+  // THANH BOTTOM BAR !
   Widget _scrollingList(ScrollController sc) {
     return Stack(
       children: [
