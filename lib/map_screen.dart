@@ -18,8 +18,6 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   List<LatLng> points = [];
-  int _currentIndex = 0;
-  bool _isBottomSheetExpanded = false;
   bool _isSidebarOpen = false;
   bool isExpanded = false;
   List<Marker> markers = [];
@@ -33,17 +31,11 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  void onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   // NỐI 2 ĐIỂM !
   getCoordinates() async {
     // Requesting for openrouteservice api
-    var response = await http
-        .get(getRouteUrl("105.77977,21.05229", '105.79954,21.000041'));
+    var response = await http.get(getRouteUrl(
+        "105.7798917,21.0528818", '105.78040038164905, 21.05396746735106'));
     setState(() {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
@@ -96,9 +88,82 @@ class _MapScreenState extends State<MapScreen> {
 
   // Method to handle marker tap
   void handleMarkerTap(LatLng tappedPoint) {
-    setState(() {
-      tappedMarkers.removeWhere((marker) => marker.point == tappedPoint);
-    });
+    // Show the information about the marker (latitude and longitude)
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Marker Info'),
+          content: Text(
+            'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Remove the tapped marker from the tappedMarkers list
+                setState(() {
+                  tappedMarkers
+                      .removeWhere((marker) => marker.point == tappedPoint);
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text(
+                'Delete Marker',
+                style: TextStyle(
+                  color: Colors.red,
+                  // Change the color of the text here
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Rotate the map around the marker by 90 degrees
+  void rotateMapAroundMarker() async {
+    double lat = curloca.latitude - mapController.center.latitude;
+    double lng = curloca.longitude - mapController.center.longitude;
+
+    Offset offset = Offset(lat, lng);
+    log("Rotate around marker: $lat - $lng - ${offset.dx}");
+
+    // Use the mapController.rotateAroundPoint() method to rotate the map
+    mapController.rotateAroundPoint(mapController.rotation + 90,
+        offset: offset);
+  }
+
+// Move the map down and zoom in to level 18
+  void offsetDownAndZoomIn() {
+    double zoomIncrement = 0.0009;
+    route = LatLng(
+      mapController.center.latitude + zoomIncrement,
+      mapController.center.longitude,
+    );
+    mapController.move(route, 18); // Set the zoom level to 18
+    log("Move: $route");
+  }
+
+// Rotate the entire map by 90 degrees
+  void rotateMap() {
+    mapController.rotate(mapController.rotation + 90);
+  }
+
+// Zoom in by decreasing the zoom level by 1
+  void zoomIn() {
+    mapController.move(mapController.center, mapController.zoom - 1);
+  }
+
+// Zoom out by increasing the zoom level by 1
+  void zoomOut() {
+    mapController.move(mapController.center, mapController.zoom + 1);
   }
 
   void clearAllMarkers() {
@@ -320,20 +385,8 @@ class _MapScreenState extends State<MapScreen> {
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: () async {
-                          double lat =
-                              curloca.latitude - mapController.center.latitude;
-                          double lng = curloca.longitude -
-                              mapController.center.longitude;
-
-                          Offset offset = Offset(lat, lng);
-                          log("Rotate with marker: $lat - $lng - ${offset.dx}");
-
-                          mapController.rotateAroundPoint(
-                              mapController.rotation + 90,
-                              offset: offset);
-                        },
-                        tooltip: 'Rotate with marker',
+                        onPressed: rotateMapAroundMarker,
+                        tooltip: 'Rotate around marker',
                         child: const Icon(Icons.cached),
                       ),
                     ),
@@ -344,16 +397,12 @@ class _MapScreenState extends State<MapScreen> {
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: () {
-                          route = LatLng(mapController.center.latitude + 0.0005,
-                              mapController.center.longitude);
-                          mapController.move(route, mapController.zoom);
-                          log("Move: $route");
-                        },
-                        tooltip: 'Route',
+                        onPressed: offsetDownAndZoomIn,
+                        tooltip: 'Offset down',
                         child: const Icon(Icons.filter_center_focus),
                       ),
                     ),
+
                     const SizedBox(
                         height: 8), // Add some spacing between the buttons
                     SizedBox(
@@ -361,9 +410,7 @@ class _MapScreenState extends State<MapScreen> {
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: () {
-                          mapController.rotate(mapController.rotation + 90);
-                        },
+                        onPressed: rotateMap,
                         tooltip: 'Rotate Map',
                         child: const Icon(Icons.rotate_right),
                       ),
@@ -375,15 +422,10 @@ class _MapScreenState extends State<MapScreen> {
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: () {
-                          mapController.move(
-                              mapController.center, mapController.zoom - 1);
-                        },
-                        tooltip: 'ZOOM IN ',
-                        child: const Icon(
-                          Icons.zoom_in_map,
-                          color: Colors.white,
-                        ),
+                        onPressed: zoomIn,
+                        tooltip: 'Zoom In',
+                        child:
+                            const Icon(Icons.zoom_in_map, color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -392,15 +434,10 @@ class _MapScreenState extends State<MapScreen> {
                       height: 40, // Specify the desired height
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: () {
-                          mapController.move(
-                              mapController.center, mapController.zoom + 1);
-                        },
-                        tooltip: 'ZOOM OUT',
-                        child: const Icon(
-                          Icons.zoom_out_map,
-                          color: Colors.white,
-                        ),
+                        onPressed: zoomOut,
+                        tooltip: 'Zoom Out',
+                        child:
+                            const Icon(Icons.zoom_out_map, color: Colors.white),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -411,10 +448,7 @@ class _MapScreenState extends State<MapScreen> {
                         backgroundColor: Colors.blueGrey,
                         onPressed: clearAllMarkers,
                         tooltip: 'Clear Marker onTAP',
-                        child: const Icon(
-                          Icons.clear_all,
-                          color: Colors.white,
-                        ),
+                        child: const Icon(Icons.clear_all, color: Colors.white),
                       ),
                     ),
                   ],
@@ -429,7 +463,7 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.blueAccent,
-                    onPressed: handleButtonPress,
+                    onPressed: getCoordinates,
                     tooltip: 'Polyline',
                     child: const Icon(
                       Icons.route,
@@ -439,7 +473,6 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
-
             // NÚT GET LOCATION HIỆN TẠI
             Positioned(
               top: 480,
@@ -464,6 +497,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
     );
+    Stack();
   }
 
   // THANH BOTTOM BAR !
