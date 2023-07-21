@@ -92,6 +92,9 @@ class _MapScreenState extends State<MapScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        // Log the latitude and longitude of the tapped marker
+        log("Tapped Marker - Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}");
+
         return AlertDialog(
           title: const Text('Marker Info'),
           content: Text(
