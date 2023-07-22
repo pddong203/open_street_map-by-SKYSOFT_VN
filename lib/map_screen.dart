@@ -25,6 +25,143 @@ class _MapScreenState extends State<MapScreen> {
   LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
 
+  // Method to show the "60km" dialog
+  void show60KmDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: const BorderSide(
+              color: Colors.blueAccent, // Set the border color
+              width: 3.0, // Set the border width
+            ),
+          ),
+          backgroundColor: Colors.white, // Set the background color
+          title: const Row(
+            children: [
+              Icon(
+                Icons.speed,
+                color: Colors.blueAccent,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Normal Speed!',
+                style: TextStyle(
+                  color: Colors.blueAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Minimum Speed: 60km',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.cyan,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Your requirement speed minimum of 60 km/h.',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Method to show the "80km" dialog
+  void show80KmDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: const BorderSide(
+              color: Colors.red, // Set the border color
+              width: 3.0, // Set the border width
+            ),
+          ),
+          backgroundColor: Colors.white, // Set the background color
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_rounded,
+                color: Colors.red,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Warning Your Speed!',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Maximum Speed: 80km',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.redAccent,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'You drive faster than the required speed',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                'Please slow down to be safe!!!',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void toggleSidebar() {
     setState(() {
       _isSidebarOpen = !_isSidebarOpen;
@@ -325,7 +462,7 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   FloatingActionButton(
                     backgroundColor: Colors.cyan,
-                    onPressed: handleButtonPress,
+                    onPressed: show60KmDialog, // Call the show60KmDialog method
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
@@ -337,7 +474,7 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(width: 5),
                   FloatingActionButton(
                     backgroundColor: Colors.redAccent,
-                    onPressed: handleButtonPress,
+                    onPressed: show80KmDialog, // Call the show80KmDialog method
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
@@ -500,7 +637,6 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ),
     );
-    Stack();
   }
 
   // THANH BOTTOM BAR !
