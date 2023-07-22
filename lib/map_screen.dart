@@ -16,7 +16,7 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List<LatLng> points = [];
   bool _isSidebarOpen = false;
   bool isExpanded = false;
@@ -233,6 +233,13 @@ class _MapScreenState extends State<MapScreen> {
         log("Tapped Marker - Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}");
 
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: const BorderSide(
+              color: Colors.lightBlue, // Set the border color
+              width: 3.0, // Set the border width
+            ),
+          ),
           title: const Text('Marker Info'),
           content: Text(
             'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
@@ -391,6 +398,10 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final isDesktop = screenSize.width > 1024;
+    final isTablet = screenSize.width <= 1024 && screenSize.width > 600;
+    final isMobile = screenSize.width <= 600;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -455,37 +466,68 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
-            Positioned(
-              top: 85,
-              left: 5,
-              child: Row(
-                children: [
-                  FloatingActionButton(
-                    backgroundColor: Colors.cyan,
-                    onPressed: show60KmDialog, // Call the show60KmDialog method
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.speed),
-                        Text("60km"),
-                      ],
+            if (isDesktop)
+              Positioned(
+                top: 85,
+                left: 5,
+                child: Row(
+                  children: [
+                    FloatingActionButton(
+                      backgroundColor: Colors.cyan,
+                      onPressed: show60KmDialog,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.speed),
+                          Text("60km"),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    FloatingActionButton(
+                      backgroundColor: Colors.redAccent,
+                      onPressed: show80KmDialog,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.warning),
+                          Text("80km"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isTablet || isMobile)
+              Positioned(
+                top: 85,
+                right: 5,
+                child: Column(children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: isExpanded ? 80 : 60,
+                    width: 60,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        setState(() {
+                          isExpanded = !isExpanded;
+                        });
+                      },
+                      backgroundColor: Colors.grey,
+                      child: isExpanded
+                          ? const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                            )
+                          : const Icon(
+                              Icons.settings,
+                              color: Colors.white,
+                            ),
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  FloatingActionButton(
-                    backgroundColor: Colors.redAccent,
-                    onPressed: show80KmDialog, // Call the show80KmDialog method
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.warning),
-                        Text("80km"),
-                      ],
-                    ),
-                  ),
-                ],
+                ]),
               ),
-            ),
+
             Positioned(
               top: 85,
               right: 5,
@@ -595,43 +637,43 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
+
             // NÚT NỐI 2 ĐIỂM !
             Positioned(
-              top: 480,
-              right: 5,
-              child: Column(
-                children: [
-                  FloatingActionButton(
-                    backgroundColor: Colors.blueAccent,
-                    onPressed: getCoordinates,
-                    tooltip: 'Polyline',
-                    child: const Icon(
-                      Icons.route,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              // The position for the polyline button based on screen size
+              child: FloatingActionButton(
+                backgroundColor: Colors.blueAccent,
+                onPressed: getCoordinates,
+                tooltip: 'Polyline',
+                child: const Icon(
+                  Icons.route,
+                  color: Colors.white,
+                ),
               ),
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 130,
+              right: isDesktop ? 30 : 10,
             ),
-            // NÚT GET LOCATION HIỆN TẠI
             Positioned(
-              top: 480,
-              left: 5,
-              child: Column(
-                children: [
-                  FloatingActionButton(
-                    backgroundColor: Colors.green,
-                    onPressed: () => {
-                      currentLoc(),
-                    },
-                    tooltip: 'Get Current Location',
-                    child: const Icon(
-                      Icons.my_location,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+              // The position for the current location button based on screen size
+              child: FloatingActionButton(
+                backgroundColor: Colors.green,
+                onPressed: currentLoc,
+                tooltip: 'Get Current Location',
+                child: const Icon(
+                  Icons.my_location,
+                  color: Colors.white,
+                ),
               ),
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 130,
+              left: isDesktop ? 30 : 10,
             ),
           ],
         ),
