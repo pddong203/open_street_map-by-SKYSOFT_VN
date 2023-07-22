@@ -319,7 +319,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-  @override
   double? lat;
   double? long;
   String address = "";
@@ -641,6 +640,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             // NÚT NỐI 2 ĐIỂM !
             Positioned(
               // The position for the polyline button based on screen size
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 130,
+              right: isDesktop ? 30 : 10,
+              // The position for the polyline button based on screen size
               child: FloatingActionButton(
                 backgroundColor: Colors.blueAccent,
                 onPressed: getCoordinates,
@@ -650,14 +656,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   color: Colors.white,
                 ),
               ),
+            ),
+            Positioned(
+              // The position for the current location button based on screen size
               bottom: isDesktop
                   ? 110
                   : isTablet
                       ? 110
                       : 130,
-              right: isDesktop ? 30 : 10,
-            ),
-            Positioned(
+              left: isDesktop ? 30 : 10,
               // The position for the current location button based on screen size
               child: FloatingActionButton(
                 backgroundColor: Colors.green,
@@ -668,12 +675,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   color: Colors.white,
                 ),
               ),
-              bottom: isDesktop
-                  ? 110
-                  : isTablet
-                      ? 110
-                      : 130,
-              left: isDesktop ? 30 : 10,
             ),
           ],
         ),
