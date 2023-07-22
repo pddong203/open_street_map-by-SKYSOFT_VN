@@ -465,68 +465,37 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ),
 
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
-            if (isDesktop)
-              Positioned(
-                top: 85,
-                left: 5,
-                child: Row(
-                  children: [
-                    FloatingActionButton(
-                      backgroundColor: Colors.cyan,
-                      onPressed: show60KmDialog,
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(Icons.speed),
-                          Text("60km"),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    FloatingActionButton(
-                      backgroundColor: Colors.redAccent,
-                      onPressed: show80KmDialog,
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Icon(Icons.warning),
-                          Text("80km"),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (isTablet || isMobile)
-              Positioned(
-                top: 85,
-                right: 5,
-                child: Column(children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: isExpanded ? 80 : 60,
-                    width: 60,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        setState(() {
-                          isExpanded = !isExpanded;
-                        });
-                      },
-                      backgroundColor: Colors.grey,
-                      child: isExpanded
-                          ? const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                            )
-                          : const Icon(
-                              Icons.settings,
-                              color: Colors.white,
-                            ),
+            Positioned(
+              top: 85,
+              left: 5,
+              child: Row(
+                children: [
+                  FloatingActionButton(
+                    backgroundColor: Colors.cyan,
+                    onPressed: show60KmDialog,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.speed),
+                        Text("60km"),
+                      ],
                     ),
                   ),
-                ]),
+                  const SizedBox(width: 5),
+                  FloatingActionButton(
+                    backgroundColor: Colors.redAccent,
+                    onPressed: show80KmDialog,
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.warning),
+                        Text("80km"),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-
+            ),
             Positioned(
               top: 85,
               right: 5,
@@ -636,7 +605,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-
+            // NÚT BÊN DƯỚI GẦN BOTTOM BAR
             // NÚT NỐI 2 ĐIỂM !
             Positioned(
               // The position for the polyline button based on screen size
