@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:async';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -25,6 +26,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List listOfPoints = []; // Track the expansion state of the button
   LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
+  bool isShowingStack = true;
 
   // Method to show the "60km" dialog
   void show60KmDialog() {
@@ -294,6 +296,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         ),
       ),
     ]);
+    showStackRepeatedly();
+  }
+
+  void showStackRepeatedly() {
+    // Toggle the visibility of the stack
+    setState(() {
+      isShowingStack = !isShowingStack;
+    });
+
+    // Repeat the process after a short delay (e.g., 500 milliseconds)
+    Timer(Duration(milliseconds: 500), () {
+      showStackRepeatedly();
+    });
   }
 
 // add marker location trên bản đồ khi OnTap
@@ -499,7 +514,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     final screenSize = MediaQuery.of(context).size;
     final isDesktop = screenSize.width > 1024;
     final isTablet = screenSize.width <= 1024 && screenSize.width > 600;
-    final isMobile = screenSize.width <= 600;
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -562,11 +576,35 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
-
+            Stack(
+              children: [
+                IgnorePointer(
+                  ignoring: true,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 100),
+                    opacity: isShowingStack ? 1.0 : 0.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.2),
+                          ),
+                          BoxShadow(
+                            color: Colors.white70.withOpacity(0.2),
+                            spreadRadius: -5.0,
+                            blurRadius: 20.0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
             Positioned(
               top: 23,
-              left: 70,
+              left: 95,
               child: AvatarGlow(
                 glowColor: Colors.red.shade700,
                 endRadius: 90.0,
@@ -615,7 +653,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 duration: const Duration(milliseconds: 2000),
                 repeat: true,
                 showTwoGlows: true,
-                repeatPauseDuration: const Duration(milliseconds: 100),
+                repeatPauseDuration: const Duration(milliseconds: 500),
                 child: Material(
                   elevation: 8.0,
                   shape: const CircleBorder(),
@@ -669,29 +707,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
-            // Stack(
-            //   children: [
-            //     IgnorePointer(
-            //       ignoring: true,
-            //       child: Container(
-            //         decoration: BoxDecoration(
-            //           boxShadow: [
-            //             BoxShadow(
-            //               color: Colors.red.withOpacity(0.2),
-            //             ),
-            //             BoxShadow(
-            //               color: Colors.white70.withOpacity(0.2),
-            //               spreadRadius: -5.0,
-            //               blurRadius: 20.0,
-            //             ),
-            //           ],
-            //         ),
-            //       ),
-            //     )
-            //   ],
-            // ),
-
             Positioned(
               top: 85,
               right: 5,
