@@ -174,6 +174,87 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
+  void showDangerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+            side: const BorderSide(
+              color: Colors.red, // Set the border color
+              width: 3.0, // Set the border width
+            ),
+          ),
+          backgroundColor: Colors.white, // Set the background color
+          title: Row(
+            children: [
+              const Icon(
+                Icons.dangerous,
+                color: Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Warning Your Safe !!!',
+                style: TextStyle(
+                  color: Colors.red.shade500,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Emergency Situation Now',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'If you are in danger, turn on SOS mode',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.yellowAccent, // Set the background color here
+                    borderRadius: BorderRadius.circular(
+                        25), // Optional: Add rounded corners
+                  ),
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'SOS',
+                      style: TextStyle(
+                        color: Colors.red, // Set the text color to red
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void toggleSidebar() {
     setState(() {
       _isSidebarOpen = !_isSidebarOpen;
@@ -485,6 +566,48 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
             Positioned(
               top: 23,
+              left: 70,
+              child: AvatarGlow(
+                glowColor: Colors.red.shade700,
+                endRadius: 90.0,
+                duration: const Duration(milliseconds: 2000),
+                repeat: true,
+                showTwoGlows: true,
+                repeatPauseDuration: const Duration(milliseconds: 100),
+                child: Material(
+                  elevation: 8.0,
+                  shape: const CircleBorder(),
+                  child: CircleAvatar(
+                    radius: 28.0,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FloatingActionButton(
+                          backgroundColor: Colors.red,
+                          onPressed: showDangerDialog,
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Icon(Icons.car_crash),
+                              Text(
+                                "Danger",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight:
+                                      FontWeight.bold, // Set the font size here
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 23,
               left: 5,
               child: AvatarGlow(
                 glowColor: Colors.yellow.shade900,
@@ -595,7 +718,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                               color: Colors.white,
                             )
                           : const Icon(
-                              Icons.settings,
+                              Icons.tune,
                               color: Colors.white,
                             ),
                     ),
