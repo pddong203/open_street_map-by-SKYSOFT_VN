@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -47,7 +48,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
               SizedBox(width: 8),
               Text(
-                'Normal Speed!',
+                'Your Speed!',
                 style: TextStyle(
                   color: Colors.blueAccent,
                   fontWeight: FontWeight.bold,
@@ -78,11 +79,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
             ),
           ],
         );
@@ -99,22 +105,22 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
             side: const BorderSide(
-              color: Colors.red, // Set the border color
+              color: Colors.amber, // Set the border color
               width: 3.0, // Set the border width
             ),
           ),
           backgroundColor: Colors.white, // Set the background color
-          title: const Row(
+          title: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.warning_rounded,
-                color: Colors.red,
+                color: Colors.amber,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'Warning Your Speed!',
+                'Alert Your Speed!',
                 style: TextStyle(
-                  color: Colors.red,
+                  color: Colors.amber.shade500,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
@@ -128,7 +134,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 'Maximum Speed: 80km',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.redAccent,
+                  color: Colors.orangeAccent,
                   fontSize: 16,
                 ),
               ),
@@ -141,20 +147,26 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
               Text(
-                'Please slow down to be safe!!!',
+                'Please slow down to be safe !!!',
                 style: TextStyle(
-                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
                   fontSize: 14,
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
             ),
           ],
         );
@@ -236,11 +248,17 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
             side: const BorderSide(
-              color: Colors.lightBlue, // Set the border color
+              color: Colors.blueAccent, // Set the border color
               width: 3.0, // Set the border width
             ),
           ),
-          title: const Text('Marker Info'),
+          title: Text(
+            'Marker Info',
+            style: TextStyle(
+              color: Colors
+                  .blue.shade500, // Change the color of the title text here
+            ),
+          ),
           content: Text(
             'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
           ),
@@ -466,36 +484,91 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
             Positioned(
-              top: 85,
+              top: 23,
               left: 5,
-              child: Row(
-                children: [
-                  FloatingActionButton(
-                    backgroundColor: Colors.cyan,
-                    onPressed: show60KmDialog,
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.speed),
-                        Text("60km"),
+              child: AvatarGlow(
+                glowColor: Colors.yellow.shade900,
+                endRadius: 90.0,
+                duration: const Duration(milliseconds: 2000),
+                repeat: true,
+                showTwoGlows: true,
+                repeatPauseDuration: const Duration(milliseconds: 100),
+                child: Material(
+                  elevation: 8.0,
+                  shape: const CircleBorder(),
+                  child: CircleAvatar(
+                    radius: 28.0,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FloatingActionButton(
+                          backgroundColor: Colors.amberAccent,
+                          onPressed: show80KmDialog,
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Icon(Icons.warning),
+                              Text(
+                                "80km/h",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight:
+                                      FontWeight.bold, // Set the font size here
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  FloatingActionButton(
-                    backgroundColor: Colors.redAccent,
-                    onPressed: show80KmDialog,
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(Icons.warning),
-                        Text("80km"),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
+            Positioned(
+              top: 85,
+              left: 3, // Adjust the left position according to your preference.
+              child: FloatingActionButton(
+                backgroundColor: Colors.cyan.shade500,
+                onPressed: show60KmDialog,
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(Icons.speed),
+                    Text(
+                      "60km/h",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold, // Set the font size here
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+
+            // Stack(
+            //   children: [
+            //     IgnorePointer(
+            //       ignoring: true,
+            //       child: Container(
+            //         decoration: BoxDecoration(
+            //           boxShadow: [
+            //             BoxShadow(
+            //               color: Colors.red.withOpacity(0.2),
+            //             ),
+            //             BoxShadow(
+            //               color: Colors.white70.withOpacity(0.2),
+            //               spreadRadius: -5.0,
+            //               blurRadius: 20.0,
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     )
+            //   ],
+            // ),
+
             Positioned(
               top: 85,
               right: 5,
@@ -605,7 +678,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            // NÚT BÊN DƯỚI GẦN BOTTOM BAR
+            // NÚT BÊN DƯỚI GẦN BOTTOM
             // NÚT NỐI 2 ĐIỂM !
             Positioned(
               // The position for the polyline button based on screen size
