@@ -26,7 +26,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List listOfPoints = []; // Track the expansion state of the button
   LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
-  bool isShowingStack = true;
+  bool isShowingStack = true; 
+  bool isStackVisible = false;
 
   // Method to show the "60km" dialog
   void show60KmDialog() {
@@ -177,6 +178,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   void showDangerDialog() {
+    // Show the SOS dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -228,28 +230,38 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ],
           ),
           actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.yellowAccent, // Set the background color here
-                    borderRadius: BorderRadius.circular(
-                        25), // Optional: Add rounded corners
-                  ),
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'SOS',
-                      style: TextStyle(
-                        color: Colors.red, // Set the text color to red
+            Builder(
+              builder: (BuildContext context) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors
+                            .yellowAccent, // Set the background color here
+                        borderRadius: BorderRadius.circular(
+                            25), // Optional: Add rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+
+                          // Toggle the visibility of the stack when SOS button is clicked
+                          setState(() {
+                            isStackVisible = !isStackVisible;
+                          });
+                        },
+                        child: const Text(
+                          'SOS',
+                          style: TextStyle(
+                            color: Colors.red, // Set the text color to red
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ],
         );
@@ -306,7 +318,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
 
     // Repeat the process after a short delay (e.g., 500 milliseconds)
-    Timer(Duration(milliseconds: 500), () {
+    Timer(const Duration(milliseconds: 500), () {
       showStackRepeatedly();
     });
   }
@@ -578,27 +590,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ),
             Stack(
               children: [
-                IgnorePointer(
-                  ignoring: true,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 100),
-                    opacity: isShowingStack ? 1.0 : 0.0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.2),
-                          ),
-                          BoxShadow(
-                            color: Colors.white70.withOpacity(0.2),
-                            spreadRadius: -5.0,
-                            blurRadius: 20.0,
-                          ),
-                        ],
+                if (isStackVisible)
+                  IgnorePointer(
+                    ignoring: true,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 500),
+                      opacity: isShowingStack ? 1.0 : 0.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.1),
+                            ),
+                            BoxShadow(
+                              color: Colors.white70.withOpacity(0.2),
+                              spreadRadius: -20.0,
+                              blurRadius: 50.0,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                )
               ],
             ),
             // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
