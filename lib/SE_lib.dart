@@ -9,29 +9,41 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class SE extends StatefulWidget {
-  final LatLong center;
-
-  final Color buttonColor;
-  final Color buttonTextColor;
-  final Color locationPinIconColor;
-
-  final String hintText;
-
-  static Future<LatLng> nopFunction() {
-    throw Exception("");
-  }
-
   const SE({
     Key? key,
-    required this.center,
-    this.buttonColor = Colors.blue,
-    this.locationPinIconColor = Colors.blue,
-    this.buttonTextColor = Colors.white,
-    this.hintText = 'Search Location',
   }) : super(key: key);
 
   @override
   State<SE> createState() => _SEState();
+}
+
+class LatLong {
+  final double latitude;
+  final double longitude;
+  LatLong(this.latitude, this.longitude);
+}
+
+class InfoLocation {
+  final String displayname;
+  final double lat;
+  final double lon;
+  InfoLocation(
+      {required this.displayname, required this.lat, required this.lon});
+  @override
+  String toString() {
+    return displayname;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is InfoLocation && other.displayname == displayname;
+  }
+
+  @override
+  int get hashCode => Object.hash(displayname, lat, lon);
 }
 
 class _SEState extends State<SE> {
@@ -43,27 +55,6 @@ class _SEState extends State<SE> {
   List<Marker> tappedMarkers = [];
   Timer? _debounce;
   var client = http.Client();
-
-  void setNameCurrentPos() async {
-    double latitude = _mapController.center.latitude;
-    double longitude = _mapController.center.longitude;
-    if (kDebugMode) {
-      print(latitude);
-    }
-    if (kDebugMode) {
-      print(longitude);
-    }
-    String url =
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1';
-
-    var response = await client.post(Uri.parse(url));
-    var decodedResponse =
-        jsonDecode(utf8.decode(response.bodyBytes)) as Map<dynamic, dynamic>;
-
-    _searchController.text =
-        decodedResponse['display_name'] ?? "MOVE TO CURRENT POSITION";
-    setState(() {});
-  }
 
   void handleMapTap(LatLng location) {
     setState(() {
@@ -85,51 +76,14 @@ class _SEState extends State<SE> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    markers.addAll([
-      Marker(
-        point: const LatLng(21.03276589493197, 105.83989509524008),
-        width: 80,
-        height: 80,
-        builder: (context) => IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.flag),
-          color: Colors.redAccent,
-          iconSize: 45,
-        ),
-      ),
-    ]);
-  }
-
-  @override
-  void dispose() {
-    _mapController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // String? _autocompleteSelection;
-    OutlineInputBorder inputBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: widget.buttonColor),
-    );
-    OutlineInputBorder inputFocusBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: widget.buttonColor, width: 3.0),
-    );
-
     return Scaffold(
         body: SafeArea(
             child: Stack(
       children: [
         Positioned.fill(
             child: FlutterMap(
-          options: MapOptions(
-              onTap: (tapPosition, point) => handleMapTap(point),
-              center: LatLng(widget.center.latitude, widget.center.longitude),
-              zoom: 15.0,
-              maxZoom: 18,
-              minZoom: 6),
+          options: MapOptions(zoom: 15.0, maxZoom: 18, minZoom: 6),
           mapController: _mapController,
           children: [
             TileLayer(
@@ -160,16 +114,12 @@ class _SEState extends State<SE> {
                 TextFormField(
                     controller: _searchController,
                     focusNode: _focusNode,
-                    decoration: InputDecoration(
-                      hintText: widget.hintText,
-                      border: inputBorder,
-                      focusedBorder: inputFocusBorder,
-                    ),
+                    decoration: const InputDecoration(),
                     onChanged: (String value) {
                       if (_debounce?.isActive ?? false) _debounce?.cancel();
 
                       _debounce =
-                          Timer(const Duration(milliseconds: 2000), () async {
+                          Timer(const Duration(milliseconds: 150), () async {
                         if (kDebugMode) {
                           print(value);
                         }
@@ -236,33 +186,4 @@ class _SEState extends State<SE> {
     }
     setState(() {});
   }
-}
-
-class LatLong {
-  final double latitude;
-  final double longitude;
-  LatLong(this.latitude, this.longitude);
-}
-
-class InfoLocation {
-  final String displayname;
-  final double lat;
-  final double lon;
-  InfoLocation(
-      {required this.displayname, required this.lat, required this.lon});
-  @override
-  String toString() {
-    return displayname;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is InfoLocation && other.displayname == displayname;
-  }
-
-  @override
-  int get hashCode => Object.hash(displayname, lat, lon);
 }

@@ -77,7 +77,7 @@ class Sidebar extends StatelessWidget {
                       Navigator.pop(context);
                       onClose();
                     },
-                    child: Icon(
+                    child: const Icon(
                       Icons.close,
                       // Replace with your desired close icon
                       color: Colors.black,
@@ -160,24 +160,6 @@ class Sidebar extends StatelessWidget {
               // Handle item 1 tap
             },
           ),
-          // ListTile(
-          //   leading: const Icon(
-          //     Icons.close, // Replace with your desired close icon
-          //     color: Colors.black,
-          //   ),
-          //   title: const Text(
-          //     'Close Sidebar', // Replace with your desired title for the close icon
-          //     style: TextStyle(
-          //       fontWeight: FontWeight.bold,
-          //     ),
-          //   ),
-          //   onTap: () {
-          //     // Scaffold.of(context).openEndDrawer();
-          //     Navigator.pop(context);
-          //     onClose();
-          //   },
-          // ),
-          // Rest of the ListTiles
         ],
       ),
     );
