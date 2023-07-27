@@ -265,7 +265,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 8),
               Text(
-                'Warning Your Safe !!!',
+                'Warning Your Safe',
                 style: TextStyle(
                   color: Colors.red.shade500,
                   fontWeight: FontWeight.bold,
@@ -392,6 +392,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   });
                 },
               ),
+
               Stack(
                 children: [
                   Column(children: [
@@ -403,8 +404,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       child: Column(
                         children: [
                           SizedBox(
-                            height:
-                                60, // Reduced the height to make the buttons smaller
+                            height: MediaQuery.of(context).size.height *
+                                0.1, // Reduced the height to make the buttons smaller
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: 12,
@@ -412,6 +413,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                 List<IconData> buttonIcons = [
                                   Icons.bookmark,
                                   Icons.local_parking,
+                                  Icons.ev_station,
                                   Icons.local_gas_station,
                                   Icons.fastfood,
                                   Icons.local_cafe,
@@ -427,13 +429,14 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                 List<String> buttonTexts = [
                                   'Saved',
                                   'Parking',
+                                  'Electric',
                                   'Gas',
                                   'Food',
                                   'Coffee',
                                   'Shopping',
-                                  'Pharmacy',
-                                  'Stores',
-                                  'Hospital',
+                                  'Pharmacies',
+                                  'Grocery',
+                                  'Hospital ',
                                   'Hotel',
                                   'Parks',
                                   'Garages',
@@ -456,7 +459,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                         foregroundColor: Colors.black,
                                         backgroundColor: Colors.white,
                                         padding: const EdgeInsets.all(
-                                            10.0), // Reduced padding inside the button
+                                            6.0), // Reduced padding inside the button
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
                                               12.0), // Slightly reduced the border radius
@@ -475,14 +478,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           ),
                                           const SizedBox(
                                               height:
-                                                  4.0), // Reduced gap between icon and text
-                                          Text(
-                                            buttonTexts[index],
-                                            style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize:
-                                                  12.0, // Reduced text size
-                                              fontWeight: FontWeight.bold,
+                                                  1.0), // Reduced gap between icon and text
+                                          Flexible(
+                                            child: Text(
+                                              buttonTexts[index],
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize:
+                                                    12.0, // Reduced text size
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines:
+                                                  1, // Ensures the text stays in one line
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Truncate with ellipsis if overflowed
                                             ),
                                           ),
                                         ],
@@ -588,43 +597,53 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ]),
-                  SingleChildScrollView(
-                    child: Container(
-                      color: Colors.white,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        // physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _options.length > 10 ? 10 : _options.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                bottom:
-                                    BorderSide(color: Colors.black, width: 0.1),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height *
+                        0.7, // You can adjust the height as needed
+                    child: Stack(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Container(
+                              color: Colors.white,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount:
+                                    _options.length > 20 ? 20 : _options.length,
+                                itemBuilder: (context, index) {
+                                  return Container(
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                            color: Colors.black, width: 0.1),
+                                      ),
+                                    ),
+                                    child: ListTile(
+                                      title: Text(_options[index].displayname),
+                                      onTap: () {
+                                        mapController.move(
+                                          LatLng(_options[index].lat,
+                                              _options[index].lon),
+                                          15.0,
+                                        );
+
+                                        handleSearchTap(
+                                          LatLng(_options[index].lat,
+                                              _options[index].lon),
+                                        );
+                                        _options.clear();
+                                        _searchController.clear();
+                                        setState(() {});
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                            child: ListTile(
-                              title: Text(_options[index].displayname),
-                              onTap: () {
-                                mapController.move(
-                                  LatLng(
-                                      _options[index].lat, _options[index].lon),
-                                  15.0,
-                                );
-
-                                handleSearchTap(
-                                  LatLng(
-                                      _options[index].lat, _options[index].lon),
-                                );
-                                _options.clear();
-                                _searchController.clear();
-
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
