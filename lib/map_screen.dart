@@ -67,6 +67,33 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   Timer? _debounce;
   var client = http.Client();
 
+  Future<void> repNameLocation(String value) async {
+    var client = http.Client();
+    try {
+      String url =
+          'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
+      if (kDebugMode) {
+        // print(url);
+      }
+      var response = await client.post(Uri.parse(url));
+      var decodedResponse =
+          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      if (kDebugMode) {
+        // print(decodedResponse);
+      }
+      _options = decodedResponse
+          .map((e) => InfoLocation(
+              displayname: e['display_name'],
+              lat: double.parse(e['lat']),
+              lon: double.parse(e['lon'])))
+          .toList();
+      setState(() {});
+      log('done');
+    } finally {
+      client.close();
+    }
+  }
+
 // đo tốc độ hiện thời
   void show60KmDialog() {
     showDialog(
@@ -348,7 +375,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       const Icon(Icons.search, color: Colors.blueAccent),
                   suffixIcon: const Icon(Icons.mic, color: Colors.red),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor: Colors.grey[300],
                 ),
                 onChanged: (String value) {
                   if (_debounce?.isActive ?? false) {
@@ -429,7 +456,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                     width:
                                         70, // Reduced the width to make the buttons smaller
                                     child: ElevatedButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        if (kDebugMode) {
+                                          print('Button $index pressed!');
+                                        }
+                                      },
                                       style: ElevatedButton.styleFrom(
                                         foregroundColor: Colors.black,
                                         backgroundColor: Colors.white,
@@ -585,7 +616,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                               color: Colors.white,
                               child: ListView.builder(
                                 shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount:
                                     _options.length > 20 ? 20 : _options.length,
                                 itemBuilder: (context, index) {
@@ -630,33 +660,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         );
       },
     );
-  }
-
-  Future<void> repNameLocation(String value) async {
-    var client = http.Client();
-    try {
-      String url =
-          'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
-      if (kDebugMode) {
-        // print(url);
-      }
-      var response = await client.post(Uri.parse(url));
-      var decodedResponse =
-          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-      if (kDebugMode) {
-        // print(decodedResponse);
-      }
-      _options = decodedResponse
-          .map((e) => InfoLocation(
-              displayname: e['display_name'],
-              lat: double.parse(e['lat']),
-              lon: double.parse(e['lon'])))
-          .toList();
-      setState(() {});
-      log('done');
-    } finally {
-      client.close();
-    }
   }
 
   // NỐI 2 ĐIỂM !
