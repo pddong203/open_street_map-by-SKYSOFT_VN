@@ -67,33 +67,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   Timer? _debounce;
   var client = http.Client();
 
-  Future<void> repNameLocation(String value) async {
-    var client = http.Client();
-    try {
-      String url =
-          'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
-      if (kDebugMode) {
-        print(url);
-      }
-      var response = await client.post(Uri.parse(url));
-      var decodedResponse =
-          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-      if (kDebugMode) {
-        print(decodedResponse);
-      }
-      _options = decodedResponse
-          .map((e) => InfoLocation(
-              displayname: e['display_name'],
-              lat: double.parse(e['lat']),
-              lon: double.parse(e['lon'])))
-          .toList();
-      setState(() {});
-    } finally {
-      client.close();
-    }
-    setState(() {});
-  }
-
 // đo tốc độ hiện thời
   void show60KmDialog() {
     showDialog(
@@ -375,7 +348,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       const Icon(Icons.search, color: Colors.blueAccent),
                   suffixIcon: const Icon(Icons.mic, color: Colors.red),
                   filled: true,
-                  fillColor: Colors.grey[300],
+                  fillColor: Colors.grey[200],
                 ),
                 onChanged: (String value) {
                   if (_debounce?.isActive ?? false) {
@@ -383,12 +356,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   }
 
                   _debounce =
-                      Timer(const Duration(milliseconds: 600), () async {
+                      Timer(const Duration(milliseconds: 100), () async {
                     if (kDebugMode) {
-                      print(value);
+                      // print(value);
                     }
 
-                    await repNameLocation(value);
+                    await repNameLocation(value).then((value) => {
+                          setState(() {
+                            log('Set done');
+                          })
+                        });
                   });
                 },
               ),
@@ -408,7 +385,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                 0.1, // Reduced the height to make the buttons smaller
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: 12,
+                              itemCount: 14,
                               itemBuilder: (context, index) {
                                 List<IconData> buttonIcons = [
                                   Icons.bookmark,
@@ -424,6 +401,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                   Icons.hotel,
                                   Icons.park,
                                   Icons.garage,
+                                  Icons.more_horiz,
                                 ];
 
                                 List<String> buttonTexts = [
@@ -440,6 +418,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                   'Hotel',
                                   'Parks',
                                   'Garages',
+                                  'More',
                                 ];
 
                                 return Padding(
@@ -448,13 +427,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           4.0), // Reduced horizontal padding
                                   child: SizedBox(
                                     width:
-                                        80, // Reduced the width to make the buttons smaller
+                                        70, // Reduced the width to make the buttons smaller
                                     child: ElevatedButton(
-                                      onPressed: () {
-                                        if (kDebugMode) {
-                                          print('Button $index pressed!');
-                                        }
-                                      },
+                                      onPressed: () {},
                                       style: ElevatedButton.styleFrom(
                                         foregroundColor: Colors.black,
                                         backgroundColor: Colors.white,
@@ -464,9 +439,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           borderRadius: BorderRadius.circular(
                                               12.0), // Slightly reduced the border radius
                                           side: const BorderSide(
-                                            color: Colors.black,
+                                            color: Colors.grey,
+                                            width:
+                                                0.4, // Set the border width to 1.0 pixel
                                           ),
                                         ),
+                                        elevation:
+                                            0.0, // Set the elevation to 0.0 to remove the shadow
                                       ),
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
@@ -474,7 +453,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           Icon(
                                             buttonIcons[index],
                                             size: 20.0, // Reduced icon size
-                                            color: Colors.black,
+                                            color: Colors.grey,
                                           ),
                                           const SizedBox(
                                               height:
@@ -485,7 +464,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                               style: const TextStyle(
                                                 color: Colors.black,
                                                 fontSize:
-                                                    12.0, // Reduced text size
+                                                    11.0, // Reduced text size
                                                 fontWeight: FontWeight.bold,
                                               ),
                                               maxLines:
@@ -597,17 +576,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ]),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height *
-                        0.7, // You can adjust the height as needed
-                    child: Stack(
-                      children: [
-                        Expanded(
+                  _options.isNotEmpty
+                      ? SizedBox(
+                          height: MediaQuery.of(context).size.height *
+                              0.7, // You can adjust the height as needed
                           child: SingleChildScrollView(
                             child: Container(
                               color: Colors.white,
                               child: ListView.builder(
                                 shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount:
                                     _options.length > 20 ? 20 : _options.length,
                                 itemBuilder: (context, index) {
@@ -631,6 +609,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           LatLng(_options[index].lat,
                                               _options[index].lon),
                                         );
+                                        _focusNode.unfocus();
                                         _options.clear();
                                         _searchController.clear();
                                         setState(() {});
@@ -642,10 +621,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                        )
+                      : Container(),
                 ],
               ),
             ],
@@ -653,6 +630,33 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         );
       },
     );
+  }
+
+  Future<void> repNameLocation(String value) async {
+    var client = http.Client();
+    try {
+      String url =
+          'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
+      if (kDebugMode) {
+        // print(url);
+      }
+      var response = await client.post(Uri.parse(url));
+      var decodedResponse =
+          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      if (kDebugMode) {
+        // print(decodedResponse);
+      }
+      _options = decodedResponse
+          .map((e) => InfoLocation(
+              displayname: e['display_name'],
+              lat: double.parse(e['lat']),
+              lon: double.parse(e['lon'])))
+          .toList();
+      setState(() {});
+      log('done');
+    } finally {
+      client.close();
+    }
   }
 
   // NỐI 2 ĐIỂM !
