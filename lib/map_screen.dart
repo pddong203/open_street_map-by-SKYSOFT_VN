@@ -50,6 +50,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
+  // khai báo biến
   List<LatLng> points = [];
   bool _isSidebarOpen = false;
   bool isExpanded = false;
@@ -66,6 +67,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List<InfoLocation> _options = <InfoLocation>[];
   Timer? _debounce;
   var client = http.Client();
+
+// Chức năng và logic của app
 
 // lấy ra vị trí tọa độ điểm cần tìm trên bản đồ
   Future<void> repNameLocation(String value) async {
@@ -922,6 +925,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
   void handleButtonPress() {}
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   LatLng route = const LatLng(0, 0);
 // thay thế ảnh logo skysoft trên bản đồ
   Widget placeholderImageWidget() {
@@ -933,6 +937,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
+// giao diện và hìn hảnh các nút
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
