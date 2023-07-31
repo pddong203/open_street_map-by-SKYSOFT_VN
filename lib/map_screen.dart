@@ -67,6 +67,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   Timer? _debounce;
   var client = http.Client();
 
+// lấy ra vị trí tọa độ điểm cần tìm trên bản đồ
   Future<void> repNameLocation(String value) async {
     var client = http.Client();
     try {
@@ -88,7 +89,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               lon: double.parse(e['lon'])))
           .toList();
       setState(() {});
-      log('done');
     } finally {
       client.close();
     }
@@ -342,7 +342,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-// Search fullscreen
+// thanh search mở fullscreen
   void _showSearchFullScreen() {
     showModalBottomSheet(
       context: context,
@@ -388,11 +388,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       // print(value);
                     }
 
-                    await repNameLocation(value).then((value) => {
-                          setState(() {
-                            log('Set done');
-                          })
-                        });
+                    await repNameLocation(value)
+                        .then((value) => {setState(() {})});
                   });
                 },
               ),
@@ -472,7 +469,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           side: const BorderSide(
                                             color: Colors.grey,
                                             width:
-                                                0.4, // Set the border width to 1.0 pixel
+                                                0.2, // Set the border width to 1.0 pixel
                                           ),
                                         ),
                                         elevation:
@@ -609,46 +606,43 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ]),
                   _options.isNotEmpty
                       ? SizedBox(
-                          height: MediaQuery.of(context).size.height *
-                              0.7, // You can adjust the height as needed
-                          child: SingleChildScrollView(
-                            child: Container(
-                              color: Colors.white,
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount:
-                                    _options.length > 20 ? 20 : _options.length,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    decoration: const BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                            color: Colors.black, width: 0.1),
-                                      ),
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: Container(
+                            color: Colors.white,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount:
+                                  _options.length > 20 ? 20 : _options.length,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Colors.black, width: 0.1),
                                     ),
-                                    child: ListTile(
-                                      title: Text(_options[index].displayname),
-                                      onTap: () {
-                                        mapController.move(
-                                          LatLng(_options[index].lat,
-                                              _options[index].lon),
-                                          15.0,
-                                        );
+                                  ),
+                                  child: ListTile(
+                                    title: Text(_options[index].displayname),
+                                    onTap: () {
+                                      mapController.move(
+                                        LatLng(_options[index].lat,
+                                            _options[index].lon),
+                                        15.0,
+                                      );
+                                      _focusNode.unfocus();
+                                      handleSearchTap(
+                                        LatLng(_options[index].lat,
+                                            _options[index].lon),
+                                      );
 
-                                        handleSearchTap(
-                                          LatLng(_options[index].lat,
-                                              _options[index].lon),
-                                        );
-                                        _focusNode.unfocus();
-                                        _options.clear();
-                                        _searchController.clear();
-                                        setState(() {});
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
+                                      _options.clear();
+                                      _searchController.clear();
+                                      setState(() {});
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         )
@@ -678,7 +672,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-// Chức năng của ứng dụng
+// thêm marker có sẵn lên bản đồ
   @override
   void initState() {
     super.initState();
@@ -698,6 +692,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     showStackRepeatedly();
   }
 
+// Hiệu ứng cảnh báo nhấp nháy
   void showStackRepeatedly() {
     // Toggle the visibility of the stack
     setState(() {
@@ -710,6 +705,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
+// add marker trên bản đồ khi search
   void handleSearchTap(LatLng location) {
     setState(() {
       tappedMarkers.add(
@@ -720,7 +716,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           height: 80,
           builder: (context) => IconButton(
             icon: const Icon(Icons.location_on),
-            color: Colors.blue,
+            color: Colors.red,
             iconSize: 45,
             onPressed: () => handleMarkerTap(
                 location), // Call the handleMarkerTap method when the marker is tapped
@@ -750,7 +746,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-  // Method to handle marker tap
+  // xem thông tin của marker đó
   void handleMarkerTap(LatLng tappedPoint) {
     // Show the information about the marker (latitude and longitude)
     showDialog(
@@ -763,8 +759,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
             side: const BorderSide(
-              color: Colors.blueAccent, // Set the border color
-              width: 3.0, // Set the border width
+              color: Colors.blueAccent,
+              width: 3.0,
             ),
           ),
           title: Text(
@@ -807,7 +803,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Rotate the map around the marker by 90 degrees
+  // Rotate quanh điểm marker điều hướng
   void rotateMapAroundMarker() async {
     double lat = curloca.latitude - mapController.center.latitude;
     double lng = curloca.longitude - mapController.center.longitude;
@@ -820,7 +816,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         offset: offset);
   }
 
-// Move the map down and zoom in to level 18
+// offset marker điều hướng xuống dưới
   void offsetDownAndZoomIn() {
     double zoomIncrement = 0.0009;
     route = LatLng(
@@ -831,21 +827,22 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     log("Move: $route");
   }
 
-// Rotate the entire map by 90 degrees
+// Rotate cả bản đồ 90 độ
   void rotateMap() {
     mapController.rotate(mapController.rotation + 90);
   }
 
-// Zoom in by decreasing the zoom level by 1
+// Zoom in phóng to bản đồ
   void zoomIn() {
     mapController.move(mapController.center, mapController.zoom - 1);
   }
 
-// Zoom out by increasing the zoom level by 1
+// Zoom out thu nhỏ bản đồ
   void zoomOut() {
     mapController.move(mapController.center, mapController.zoom + 1);
   }
 
+// Xóa tất cả marker location tồn tại trên bản đồ
   void clearAllMarkers() {
     setState(() {
       tappedMarkers.clear();
@@ -892,6 +889,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         desiredAccuracy: LocationAccuracy.best);
   }
 
+// lấy ra vị trí hiện tại bằng gps
   currentLoc() async {
     Position data = await _determinePosition();
     log(data.latitude.toString());
@@ -925,7 +923,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void handleButtonPress() {}
 
   LatLng route = const LatLng(0, 0);
-
+// thay thế ảnh logo skysoft trên bản đồ
   Widget placeholderImageWidget() {
     // Replace this with your custom placeholder image widget
     return Container(
@@ -952,7 +950,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           width: 250,
           height: 56,
           errorWidget: (context, url, error) => placeholderImageWidget(),
-        ),
+        ), // ảnh logo
         leading: Builder(
           builder: (BuildContext context) {
             return Container(
@@ -1003,6 +1001,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
+            // hiệu ứng cảnh báo
             Stack(
               children: [
                 if (isStackVisible)
@@ -1029,7 +1028,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
               ],
             ),
-            // NÚT TRÊN ĐẦU MÀN HÌNH-BUTTON TOP OF SCREEN
+            // Các nút bên trên màn hình
             Positioned(
               top: 23,
               left: 95,
@@ -1059,8 +1058,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                 "Danger",
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight:
-                                      FontWeight.bold, // Set the font size here
+                                  fontWeight: FontWeight.bold,
                                 ),
                               )
                             ],
@@ -1101,8 +1099,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                 "80km/h",
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight:
-                                      FontWeight.bold, // Set the font size here
+                                  fontWeight: FontWeight.bold,
                                 ),
                               )
                             ],
@@ -1116,7 +1113,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ),
             Positioned(
               top: 85,
-              left: 3, // Adjust the left position according to your preference.
+              left: 3,
               child: FloatingActionButton(
                 backgroundColor: Colors.cyan.shade500,
                 onPressed: show60KmDialog,
@@ -1128,7 +1125,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       "60km/h",
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.bold, // Set the font size here
+                        fontWeight: FontWeight.bold,
                       ),
                     )
                   ],
@@ -1141,17 +1138,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               child: Column(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(
-                        milliseconds: 300), // Set the duration of the animation
-                    height: isExpanded
-                        ? 80
-                        : 60, // Adjust the width based on the expansion state
+                    duration: const Duration(milliseconds: 300),
+                    height: isExpanded ? 80 : 60,
                     width: 60,
                     child: FloatingActionButton(
                       onPressed: () {
                         setState(() {
-                          isExpanded =
-                              !isExpanded; // Toggle the expansion state when pressed
+                          isExpanded = !isExpanded;
                         });
                       },
                       backgroundColor: Colors.grey,
@@ -1167,11 +1160,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   if (isExpanded) ...[
-                    const SizedBox(
-                        height: 2), // Add some spacing between the buttons
+                    const SizedBox(height: 2),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
+                      height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: rotateMapAroundMarker,
@@ -1179,11 +1171,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.cached),
                       ),
                     ),
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
+                      height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: offsetDownAndZoomIn,
@@ -1191,12 +1182,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.filter_center_focus),
                       ),
                     ),
-
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
+                      height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: rotateMap,
@@ -1204,11 +1193,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.rotate_right),
                       ),
                     ),
-                    const SizedBox(
-                        height: 8), // Add some spacing between the buttons
+                    const SizedBox(height: 8),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: zoomIn,
@@ -1219,8 +1206,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
+                      height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: zoomOut,
@@ -1231,8 +1218,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
-                      width: 40, // Specify the desired width
-                      height: 40, // Specify the desired height
+                      width: 40,
+                      height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
                         onPressed: clearAllMarkers,
@@ -1244,8 +1231,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            // NÚT BÊN DƯỚI GẦN BOTTOM
-            // NÚT NỐI 2 ĐIỂM !
+            // Nút bên dưới màn hình
             Positioned(
               // The position for the polyline button based on screen size
               bottom: isDesktop
