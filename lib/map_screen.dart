@@ -1,18 +1,21 @@
-import 'dart:developer';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:routesapp/api.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'SiderBar.dart';
+import 'package:flutter_map/plugin_api.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-import 'package:flutter/foundation.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:skysoft/api.dart';
+import 'SiderBar.dart';
 
+// ===================CÁC CLASS PHỤ =================================================================================================================================================================
 class LatLong {
   final double latitude;
   final double longitude;
@@ -41,7 +44,9 @@ class InfoLocation {
   @override
   int get hashCode => Object.hash(displayname, lat, lon);
 }
+// =========CÁC CLASS CHÍNH  =========================================================================================================================================================================
 
+// ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
 class MapScreen extends StatefulWidget {
   const MapScreen({Key? key}) : super(key: key);
 
@@ -49,13 +54,13 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
+//========= CLASS CHÍNH ================================================================================================================================================================================
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
-  // khai báo biến
   List<LatLng> points = [];
   bool _isSidebarOpen = false;
   bool isExpanded = false;
   List<Marker> markers = [];
-  List listOfPoints = []; // Track the expansion state of the button
+  List listOfPoints = [];
   LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
   bool isShowingStack = true;
@@ -67,8 +72,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List<InfoLocation> _options = <InfoLocation>[];
   Timer? _debounce;
   var client = http.Client();
-
-// Chức năng và logic của app
+  LatLng route = const LatLng(0, 0);
+  //Animation map
+  static const _useTransformerId = 'useTransformerId';
+  final bool _useTransformer = true;
+  late final _animatedMapController = AnimatedMapController(vsync: this);
+  bool isInitialZoom = false;
 
 // lấy ra vị trí tọa độ điểm cần tìm trên bản đồ
   Future<void> repNameLocation(String value) async {
@@ -627,7 +636,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                   child: ListTile(
                                     title: Text(_options[index].displayname),
                                     onTap: () {
-                                      mapController.move(
+                                      _animatedMapController.mapController.move(
                                         LatLng(_options[index].lat,
                                             _options[index].lon),
                                         15.0,
@@ -715,8 +724,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         // Add the tapped marker to the tappedMarkers list
         Marker(
           point: location,
-          width: 80,
-          height: 80,
+          width: 100,
+          height: 100,
           builder: (context) => IconButton(
             icon: const Icon(Icons.location_on),
             color: Colors.red,
@@ -746,10 +755,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           ),
         ),
       );
+
+      // Center the map on the tapped location
+      _animatedMapController.centerOnPoint(
+        tappedPoint,
+        customId: _useTransformer ? _useTransformerId : null,
+      );
     });
   }
 
-  // xem thông tin của marker đó
+// xem thông tin của marker đó
   void handleMarkerTap(LatLng tappedPoint) {
     // Show the information about the marker (latitude and longitude)
     showDialog(
@@ -806,43 +821,52 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Rotate quanh điểm marker điều hướng
-  void rotateMapAroundMarker() async {
-    double lat = curloca.latitude - mapController.center.latitude;
-    double lng = curloca.longitude - mapController.center.longitude;
+// Center marker lấy chính giữa marker
+  int tapCount = 0;
+  void centerMarkers() {
+    // Increment the tap count on each tap
+    tapCount++;
 
-    Offset offset = Offset(lat, lng);
-    log("Rotate around marker: $lat - $lng - ${offset.dx}");
+    if (tappedMarkers.isEmpty) return;
 
-    // Use the mapController.rotateAroundPoint() method to rotate the map
-    mapController.rotateAroundPoint(mapController.rotation + 90,
-        offset: offset);
-  }
+    final points = tappedMarkers.map((m) => m.point).toList();
+    if (points.isNotEmpty) {
+      if (tapCount == 1) {
+        // Center on the points for the first tap
+        _animatedMapController.centerOnPoints(
+          points,
+          customId: _useTransformer ? _useTransformerId : null,
+        );
+      } else if (tapCount == 2) {
+        // Zoom out on the second tap
+        _animatedMapController.animatedZoomOut(curve: Curves.easeInOut);
 
-// offset marker điều hướng xuống dưới
-  void offsetDownAndZoomIn() {
-    double zoomIncrement = 0.0009;
-    route = LatLng(
-      mapController.center.latitude + zoomIncrement,
-      mapController.center.longitude,
-    );
-    mapController.move(route, 18); // Set the zoom level to 18
-    log("Move: $route");
+        // Reset the tap count after the second tap
+        tapCount = 0;
+      }
+    }
   }
 
 // Rotate cả bản đồ 90 độ
   void rotateMap() {
-    mapController.rotate(mapController.rotation + 90);
+    _animatedMapController.animatedRotateFrom(
+      90,
+      customId: _useTransformer ? _useTransformerId : null,
+    );
   }
 
-// Zoom in phóng to bản đồ
-  void zoomIn() {
-    mapController.move(mapController.center, mapController.zoom - 1);
+// Zoom in thu nhỏ bản đồ
+  void zoomOut() {
+    _animatedMapController.animatedZoomIn(
+      customId: _useTransformer ? _useTransformerId : null,
+    );
   }
 
 // Zoom out thu nhỏ bản đồ
-  void zoomOut() {
-    mapController.move(mapController.center, mapController.zoom + 1);
+  void zoomIn() {
+    _animatedMapController.animatedZoomOut(
+      customId: _useTransformer ? _useTransformerId : null,
+    );
   }
 
 // Xóa tất cả marker location tồn tại trên bản đồ
@@ -851,6 +875,122 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       tappedMarkers.clear();
     });
   }
+
+// XOAY ĐIỀU HƯỚNG TÂM XOAY QUANH ĐIỂM OFFSET
+  void rotateMapAroundMarker() {
+    // Calculate the desired rotation angle by decrementing 10 degrees from the current rotation.
+    double desiredRotation = _animatedMapController.mapController.rotation - 10;
+
+    // Define the total duration of the animation in milliseconds.
+    const int animationDuration = 500;
+
+    // Define the number of steps for the animation to achieve smooth rotation.
+    const int totalSteps = 60;
+
+    // Calculate the angle to rotate in each step to reach the desired rotation smoothly.
+    double stepRotation =
+        (desiredRotation - _animatedMapController.mapController.rotation) /
+            totalSteps;
+
+    // Calculate the delay between each step to control the animation speed.
+    int stepDelay = animationDuration ~/ totalSteps;
+
+    // Initialize a step counter to keep track of animation progress.
+    int stepCount = 0;
+
+    // Create a periodic timer to update the map rotation smoothly over time.
+    Timer.periodic(Duration(milliseconds: stepDelay), (timer) {
+      // Calculate the new rotation angle for this step.
+      double newRotation =
+          _animatedMapController.mapController.rotation + stepRotation;
+
+      // Update the map rotation using the mapController.rotateAroundPoint() method.
+      double scale = 1.21473;
+      double offsetLng = 248.07142;
+
+      // Adjust the offsetLng based on the device screen height for proper map centering.
+      if (MediaQuery.of(context).size.height < 896) {
+        offsetLng = 248.07142;
+      } else {
+        offsetLng = 248.07142 * scale;
+      }
+
+      _animatedMapController.mapController
+          .rotateAroundPoint(newRotation, offset: Offset(0, offsetLng));
+
+      // Increment the step counter to keep track of the animation progress.
+      stepCount++;
+
+      // Check if the animation is complete by comparing the step count with total steps.
+      if (stepCount >= totalSteps) {
+        // Cancel the timer when the animation is done to stop further updates.
+        timer.cancel();
+      }
+    });
+  }
+
+// OFFSET CHO MARKER NAVIGATE XUỐNG DƯỚI GẦN THANH BOTTOM BAR
+  void offsetDownAndZoomIn() {
+    // Define the total duration of the animation in milliseconds.
+    const int animationDuration = 500;
+
+    // Define the number of steps for the animation to achieve smooth movement and zooming.
+    const int totalSteps = 60;
+
+    // Define the scaling factor for offset increment to adjust animation smoothness.
+    const double scale = 1.25;
+
+    // Calculate the offset increment for each step to move the map down smoothly.
+    double offsetIncrement = 0.0015 / totalSteps;
+
+    // Adjust the offset increment based on the device screen height for proper map centering.
+    if (MediaQuery.of(context).size.height < 896) {
+      offsetIncrement = 0.00002;
+    } else {
+      offsetIncrement = 0.00002 * scale;
+    }
+
+    // Calculate the zoom increment for each step to zoom in smoothly.
+    double zoomIncrement =
+        (18 - _animatedMapController.mapController.zoom) / totalSteps;
+
+    // Initialize a step counter to keep track of animation progress.
+    int stepCount = 0;
+
+    // Create a periodic timer to update the map's position and zoom level smoothly over time.
+    Timer.periodic(
+        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
+      // Calculate the new latitude for this step by incrementing the current latitude.
+      double newLatitude =
+          _animatedMapController.mapController.center.latitude +
+              offsetIncrement;
+
+      // Calculate the new zoom level for this step by incrementing the current zoom level.
+      double newZoom =
+          _animatedMapController.mapController.zoom + zoomIncrement;
+
+      // Move the map using the mapController.move() method with the new latitude and zoom level.
+      _animatedMapController.mapController.move(
+          LatLng(newLatitude,
+              _animatedMapController.mapController.center.longitude),
+          newZoom);
+
+      // Log the new latitude and longitude for debugging purposes.
+      log("New Latitude: $newLatitude, New Longitude: ${_animatedMapController.mapController.center.longitude} - offsetLatlng: $offsetIncrement");
+
+      // Increment the step counter to keep track of the animation progress.
+      stepCount++;
+
+      // Check if the animation is complete by comparing the step count with total steps.
+      if (stepCount >= totalSteps) {
+        // Cancel the timer when the animation is done to stop further updates.
+        timer.cancel();
+      }
+    });
+  }
+
+// CHỨC NĂNG ĐANG ĐỂ TRỐNG ĐỀ CHỜ!
+  void handleButtonPress() {}
 
   double? lat;
   double? long;
@@ -892,44 +1032,83 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         desiredAccuracy: LocationAccuracy.best);
   }
 
-// lấy ra vị trí hiện tại bằng gps
-  currentLoc() async {
+  // Lấy ra vị trí hiện tại bằng GPS
+  void currentLoc() async {
     Position data = await _determinePosition();
     log(data.latitude.toString());
     log(data.longitude.toString());
+
     setState(() {
       curloca = LatLng(data.latitude, data.longitude);
       points.add(curloca); // Add the current location as a new point
+
       markers.removeWhere((marker) =>
           marker.builder ==
-          navigationMarkerBuilder); // Remove the navigation marker
+          buildNavigationMarker); // Remove the navigation marker
       markers.add(
         Marker(
           point: curloca,
           width: 80,
           height: 80,
-          builder: navigationMarkerBuilder, // Use the navigation marker builder
+          builder: buildNavigationMarker, // Use the navigation marker builder
         ),
       );
-      mapController.move(curloca, 18);
+
+      // Check if the initial zoom animation has already run, if not, run the animation
+      if (!isInitialZoom) {
+        isInitialZoom =
+            true; // Set the flag to true to prevent running the animation again
+
+        // Store the initial zoom level and adjust the target zoom level
+        double initialZoom = _animatedMapController.mapController.zoom;
+        double targetZoom = initialZoom +
+            2.5; // Increase the targetZoom for more zoom-in effect
+
+        // Create a custom zoom tween to smoothly animate the zoom level
+        const animationDuration = Duration(
+            seconds: 5); // Adjust the duration to control the smoothness
+        // Increase the number of steps for a smoother animation
+        final animationController = AnimationController(
+          vsync: this,
+          duration: animationDuration,
+        );
+        final zoomTween = Tween<double>(begin: initialZoom, end: targetZoom);
+
+        // Start the animation and update the map controller's zoom level
+        animationController.forward();
+        animationController.addListener(() {
+          final currentZoom = zoomTween.evaluate(animationController);
+          _animatedMapController.mapController.move(curloca, currentZoom);
+        });
+      } else {
+        // If the initial zoom animation has already been performed, simply move the map to the current location without zooming
+        double currentZoom = _animatedMapController.mapController.zoom;
+
+        // Check if the current zoom level is less than 18, if so, zoom in to level 18
+        if (currentZoom < 18.0) {
+          _animatedMapController.mapController.move(curloca, 18.0);
+        } else {
+          // If the current zoom level is already greater than or equal to 18, just move to the new location without zooming
+          _animatedMapController.mapController.move(curloca, currentZoom);
+        }
+      }
     });
   }
 
-  // ignore: prefer_function_declarations_over_variables
-  static final navigationMarkerBuilder = (BuildContext context) => IconButton(
-        onPressed: () {},
-        icon: const Icon(Icons.navigation),
-        color: Colors.green,
-        iconSize: 45,
-      );
+  IconButton buildNavigationMarker(BuildContext context) {
+    return IconButton(
+      onPressed: () {},
+      icon: const Icon(Icons.navigation),
+      color: Colors.green,
+      iconSize: 45,
+    );
+  }
 
-  void handleButtonPress() {}
+// ================WIDGET HIỆN TRÊN MÀN HÌNH CỦA APP ==================================================================================================================================================================================================================
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  LatLng route = const LatLng(0, 0);
-// thay thế ảnh logo skysoft trên bản đồ
+// THAY THẾ ẢNH LOGO SKYSOFT Ở MÀN VIEW PC : MOBILE + TABLET VẪN HIỆN LOGO
   Widget placeholderImageWidget() {
-    // Replace this with your custom placeholder image widget
+    // PC SẼ ĐỂ ẨN MẤT ẢNH LOGO SKYSOFT CÒN MOBILE + TABLET VẪN HIỆN LOGO
     return Container(
       width: 250,
       height: 56,
@@ -937,7 +1116,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// giao diện và hìn hảnh các nút
+// CÁC THÀNH PHẦN CHÍNH
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -989,10 +1168,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           children: [
             FlutterMap(
               options: MapOptions(
-                  onTap: (tapPosition, point) => handleMapTap(point),
-                  zoom: 15,
-                  center: const LatLng(21.03283599324495, 105.8398736375679)),
-              mapController: mapController,
+                onTap: (tapPosition, point) => handleMapTap(point),
+                zoom: 14,
+                center: const LatLng(21.03283599324495, 105.8398736375679),
+              ),
+              nonRotatedChildren: [
+                Container(
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.fiber_manual_record))
+              ],
+              mapController: _animatedMapController.mapController,
               children: [
                 TileLayer(
                   urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -1007,6 +1192,118 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ],
             ),
             // hiệu ứng cảnh báo
+            Positioned(
+              top: 85,
+              right: 5,
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    height: isExpanded ? 80 : 60,
+                    width: 60,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        setState(() {
+                          isExpanded = !isExpanded;
+                        });
+                      },
+                      backgroundColor: Colors.grey,
+                      child: isExpanded
+                          ? const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                            )
+                          : const Icon(
+                              Icons.tune,
+                              color: Colors.white,
+                            ),
+                    ),
+                  ),
+                  if (isExpanded) ...[
+                    const SizedBox(height: 2),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: rotateMapAroundMarker,
+                        tooltip: 'Rotate around marker',
+                        child: const Icon(Icons.cached),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: offsetDownAndZoomIn,
+                        tooltip: 'Offset down',
+                        child: const Icon(Icons.swipe_down_alt),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: rotateMap,
+                        tooltip: 'Rotate Map',
+                        child: const Icon(Icons.rotate_right),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: zoomIn,
+                        tooltip: 'Zoom Out',
+                        child:
+                            const Icon(Icons.zoom_in_map, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: zoomOut,
+                        tooltip: 'Zoom In',
+                        child:
+                            const Icon(Icons.zoom_out_map, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: centerMarkers,
+                        tooltip: 'Center the Markers',
+                        child: const Icon(Icons.center_focus_strong,
+                            color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: clearAllMarkers,
+                        tooltip: 'Clear Marker onTAP',
+                        child: const Icon(Icons.clear_all, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             Stack(
               children: [
                 if (isStackVisible)
@@ -1137,105 +1434,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            Positioned(
-              top: 85,
-              right: 5,
-              child: Column(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: isExpanded ? 80 : 60,
-                    width: 60,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        setState(() {
-                          isExpanded = !isExpanded;
-                        });
-                      },
-                      backgroundColor: Colors.grey,
-                      child: isExpanded
-                          ? const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                            )
-                          : const Icon(
-                              Icons.tune,
-                              color: Colors.white,
-                            ),
-                    ),
-                  ),
-                  if (isExpanded) ...[
-                    const SizedBox(height: 2),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: rotateMapAroundMarker,
-                        tooltip: 'Rotate around marker',
-                        child: const Icon(Icons.cached),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: offsetDownAndZoomIn,
-                        tooltip: 'Offset down',
-                        child: const Icon(Icons.filter_center_focus),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: rotateMap,
-                        tooltip: 'Rotate Map',
-                        child: const Icon(Icons.rotate_right),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: zoomIn,
-                        tooltip: 'Zoom In',
-                        child:
-                            const Icon(Icons.zoom_in_map, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: zoomOut,
-                        tooltip: 'Zoom Out',
-                        child:
-                            const Icon(Icons.zoom_out_map, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: clearAllMarkers,
-                        tooltip: 'Clear Marker onTAP',
-                        child: const Icon(Icons.clear_all, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
             // Nút bên dưới màn hình
             Positioned(
               // The position for the polyline button based on screen size
@@ -1256,15 +1454,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-
             Positioned(
               // The position for the current location button based on screen size
               bottom: isDesktop
                   ? 110
                   : isTablet
                       ? 110
-                      : 130,
-              left: isDesktop ? 30 : 10,
+                      : 110,
+              left: isDesktop
+                  ? 30
+                  : isTablet
+                      ? 30
+                      : 10,
               // The position for the current location button based on screen size
               child: FloatingActionButton(
                 backgroundColor: Colors.green,
@@ -1282,7 +1483,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  // THANH BOTTOM BAR !
+  // THANH BOTTOM BAR BÊN TRONG CHỨA NHỮNG GÌ
   Widget _scrollingList(ScrollController sc) {
     return Stack(
       children: [

@@ -1,4 +1,4 @@
-name: routesapp
+name: skysoft
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -43,6 +43,7 @@ dependencies:
   geocoding: ^2.1.0
   cached_network_image: ^3.2.3
   avatar_glow: ^2.0.2
+  flutter_map_animations: ^0.4.1
 
 dev_dependencies:
   flutter_test:
