@@ -1191,7 +1191,33 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            // hiệu ứng cảnh báo
+            // HIỆU ỨNG CẢNH BÁO CẢ MÀN HÌNH
+            Stack(
+              children: [
+                if (isStackVisible)
+                  IgnorePointer(
+                    ignoring: true,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 500),
+                      opacity: isShowingStack ? 1.0 : 0.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.1),
+                            ),
+                            BoxShadow(
+                              color: Colors.white70.withOpacity(0.1),
+                              spreadRadius: -50.0,
+                              blurRadius: 50.0,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             Positioned(
               top: 85,
               right: 5,
@@ -1304,33 +1330,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            Stack(
-              children: [
-                if (isStackVisible)
-                  IgnorePointer(
-                    ignoring: true,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 500),
-                      opacity: isShowingStack ? 1.0 : 0.0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.1),
-                            ),
-                            BoxShadow(
-                              color: Colors.white70.withOpacity(0.1),
-                              spreadRadius: -50.0,
-                              blurRadius: 50.0,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            // Các nút bên trên màn hình
+            // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
             Positioned(
               top: 23,
               left: 95,
@@ -1434,15 +1434,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            // Nút bên dưới màn hình
+            // NÚT BÊN DƯỚI MÀN HÌNH
             Positioned(
               // The position for the polyline button based on screen size
               bottom: isDesktop
                   ? 110
                   : isTablet
                       ? 110
-                      : 130,
-              right: isDesktop ? 30 : 10,
+                      : 110,
+              right: isDesktop
+                  ? 40
+                  : isTablet
+                      ? 40
+                      : 20,
               // The position for the polyline button based on screen size
               child: FloatingActionButton(
                 backgroundColor: Colors.blueAccent,
@@ -1462,10 +1466,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       ? 110
                       : 110,
               left: isDesktop
-                  ? 30
+                  ? 40
                   : isTablet
-                      ? 30
-                      : 10,
+                      ? 40
+                      : 20,
               // The position for the current location button based on screen size
               child: FloatingActionButton(
                 backgroundColor: Colors.green,
