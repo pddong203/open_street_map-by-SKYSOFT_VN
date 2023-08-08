@@ -44,6 +44,7 @@ dependencies:
   cached_network_image: ^3.2.3
   avatar_glow: ^2.0.2
   flutter_map_animations: ^0.4.1
+  animated_radial_menu: ^0.0.1
 
 dev_dependencies:
   flutter_test:
