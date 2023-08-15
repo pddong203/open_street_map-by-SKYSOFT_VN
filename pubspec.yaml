@@ -45,6 +45,8 @@ dependencies:
   avatar_glow: ^2.0.2
   flutter_map_animations: ^0.4.1
   animated_radial_menu: ^0.0.1
+  share_plus: ^7.1.0
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:

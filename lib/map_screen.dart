@@ -5,17 +5,19 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:skysoft/api.dart';
 import 'SiderBar.dart';
-import 'package:animated_radial_menu/animated_radial_menu.dart';
+// import 'package:animated_radial_menu/animated_radial_menu.dart';
+// import 'package:share_plus/share_plus.dart';
 
 // ===================CÁC CLASS PHỤ =================================================================================================================================================================
 class LatLong {
@@ -66,6 +68,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List listOfPoints = [];
   LatLng curloca = const LatLng(21.03276589493197, 105.83989509524008);
   List<Marker> tappedMarkers = [];
+  List<LatLng> savedMarkers = [];
   bool isShowingStack = true;
   bool isStackVisible = false;
   //SEARCH BAR:
@@ -82,31 +85,197 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late final _animatedMapController = AnimatedMapController(vsync: this);
   bool isInitialZoom = false;
 
+  late LatLng finalCenter;
+
 // ============================= VOID LOGIC CỦA CÁC BUTTON =================================================
 // lấy ra vị trí tọa độ điểm cần tìm trên bản đồ
   Future<void> repNameLocation(String value) async {
-    var client = http.Client();
     try {
       String url =
           'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
+
       if (kDebugMode) {
-        // print(url);
+        print(url);
       }
-      var response = await client.post(Uri.parse(url));
-      var decodedResponse =
-          jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-      if (kDebugMode) {
-        // print(decodedResponse);
+
+      var response =
+          await http.get(Uri.parse(url)); // Use http.get for a GET request
+      if (response.statusCode == 200) {
+        var decodedResponse =
+            jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+
+        if (kDebugMode) {
+          print(decodedResponse);
+        }
+
+        _options = decodedResponse
+            .map((e) => InfoLocation(
+                displayname: e['display_name'],
+                lat: double.parse(e['lat'].toString()),
+                lon: double.parse(e['lon'].toString())))
+            .toList();
+
+        setState(() {});
+      } else {
+        // Handle error here if the response status code is not 200
+        print('Request failed with status: ${response.statusCode}');
       }
-      _options = decodedResponse
-          .map((e) => InfoLocation(
-              displayname: e['display_name'],
-              lat: double.parse(e['lat']),
-              lon: double.parse(e['lon'])))
-          .toList();
-      setState(() {});
-    } finally {
-      client.close();
+    } catch (error) {
+      // Handle any exceptions that occur during the process
+      print('Error: $error');
+    }
+  }
+
+  void _addMarkerToList(LatLng marker) async {
+    double roundedLatitude = double.parse(marker.latitude.toStringAsFixed(6));
+    double roundedLongitude = double.parse(marker.longitude.toStringAsFixed(6));
+
+    // Kiểm tra xem marker đã tồn tại trong danh sách chưa
+    bool markerExists = savedMarkers.any((LatLng savedMarker) =>
+        double.parse(savedMarker.latitude.toStringAsFixed(6)) ==
+            roundedLatitude &&
+        double.parse(savedMarker.longitude.toStringAsFixed(6)) ==
+            roundedLongitude);
+    if (!markerExists) {
+      setState(() {
+        savedMarkers.add(marker);
+      });
+      await _saveMarkersToSharedPreferences(savedMarkers);
+      // Gọi hàm để hiển thị maker trên bản đồ khi thêm mới
+      _showMarkerOnMap(marker);
+    }
+  }
+
+  void _removeMarkerFromList(LatLng marker) async {
+    if (savedMarkers.contains(marker)) {
+      setState(() {
+        savedMarkers.remove(marker);
+      });
+      await _saveMarkersToSharedPreferences(savedMarkers);
+    }
+  }
+
+// ham  showsaveMarker
+  void _showSaveMarkersList() async {
+    List<LatLng> savedMarkersToShow =
+        await _getSavedMarkersFromSharedPreferences();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Saved Markers',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16),
+              savedMarkers.isEmpty
+                  ? Text('No saved markers.')
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: savedMarkers.length,
+                      itemBuilder: (context, index) {
+                        LatLng marker = savedMarkers[index];
+                        return ListTile(
+                          title: Text(
+                            'Marker ${index + 1}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Latitude: ${marker.latitude}, Longitude: ${marker.longitude}',
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext dialogContext) {
+                                  return AlertDialog(
+                                    title: Text('Confirm Delete'),
+                                    content: Text(
+                                        'Are you sure you want to delete this marker?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(dialogContext);
+                                        },
+                                        child: Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          _removeMarkerFromList(marker);
+                                          Navigator.pop(dialogContext);
+                                          Navigator.pop(context);
+                                          _showSaveMarkersList();
+                                        },
+                                        child: Text('Delete'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          onTap: () {
+                            // Ấn vào maker để hiển thị biểu tượng tương ứng trên bản đồ
+                            _showMarkerOnMap(marker);
+                            Navigator.of(context).pop();
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+              // ...
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveMarkersToSharedPreferences(List<LatLng> markers) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> markerList = markers
+        .map((LatLng marker) => "${marker.latitude},${marker.longitude}")
+        .toList();
+
+    await prefs.setStringList('savedMarkers', markerList);
+  }
+
+// Khôi phục danh sách các LatLng từ SharedPreferences
+  Future<List<LatLng>> _getSavedMarkersFromSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> markerList = prefs.getStringList('savedMarkers') ?? [];
+    return markerList.map((String marker) {
+      List<String> parts = marker.split(',');
+      double latitude = double.parse(parts[0]);
+      double longitude = double.parse(parts[1]);
+      return LatLng(latitude, longitude);
+    }).toList();
+  }
+
+  Future<void> _loadSavedMarkers() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? markerStrings = prefs.getStringList('savedMarkers');
+    if (markerStrings != null) {
+      List<LatLng> loadedMarkers = markerStrings.map((markerString) {
+        List<String> parts = markerString.split(',');
+        double latitude = double.parse(parts[0]);
+        double longitude = double.parse(parts[1]);
+        return LatLng(latitude, longitude);
+      }).toList();
+      setState(() {
+        savedMarkers = loadedMarkers;
+      });
     }
   }
 
@@ -473,6 +642,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                         if (kDebugMode) {
                                           print('Button $index pressed!');
                                         }
+                                        if (index == 0) {
+                                          _showSaveMarkersList();
+                                        }
                                       },
                                       style: ElevatedButton.styleFrom(
                                         foregroundColor: Colors.black,
@@ -692,6 +864,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _loadSavedMarkers();
     markers.addAll([
       Marker(
         point: const LatLng(21.03276589493197, 105.83989509524008),
@@ -706,6 +879,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       ),
     ]);
     showStackRepeatedly();
+    _loadSavedMarkers();
   }
 
 // Hiệu ứng cảnh báo nhấp nháy
@@ -736,6 +910,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             iconSize: 45,
             onPressed: () => handleMarkerTap(
                 location), // Call the handleMarkerTap method when the marker is tapped
+          ),
+        ),
+      );
+    });
+  }
+
+//click hiện lên bản đồ
+  void _showMarkerOnMap(LatLng marker) {
+    // Di chuyển bản đồ đến vị trí của marker
+    _animatedMapController.centerOnPoint(marker);
+
+    setState(() {
+      tappedMarkers.add(
+        Marker(
+          point: marker,
+          width: 100,
+          height: 100,
+          builder: (context) => IconButton(
+            icon: Icon(Icons.location_on),
+            color: Colors.red,
+            iconSize: 45,
+            onPressed: () => handleMarkerTap(marker),
           ),
         ),
       );
@@ -774,6 +970,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        bool _isSavedPressed = false;
         // Log the latitude and longitude of the tapped marker
         log("Tapped Marker - Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}");
 
@@ -796,6 +993,30 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
           ),
           actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                setState(() {
+                  _isSavedPressed = true;
+                  // Lưu lại vị trí của marker vào danh sách lưu trữ
+                  savedMarkers.add(tappedPoint);
+                });
+                await _saveMarkersToSharedPreferences(savedMarkers);
+                Navigator.of(context).pop(); // Đóng hộp thoại
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Marker saved'),
+                    duration:
+                        Duration(seconds: 2), // Thời gian hiển thị của SnackBar
+                  ),
+                );
+              },
+              child: const Text(
+                'Save Marker',
+                style: TextStyle(
+                  color: Colors.green,
+                ),
+              ),
+            ),
             TextButton(
               onPressed: () {
                 // Remove the tapped marker from the tappedMarkers list
@@ -889,9 +1110,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // XOAY ĐIỀU HƯỚNG TÂM XOAY QUANH ĐIỂM OFFSET
+
+  late LatLng modifiedCenter;
   void rotateMapAroundMarker() {
     // Calculate the desired rotation angle by decrementing 10 degrees from the current rotation.
-    double desiredRotation = _animatedMapController.mapController.rotation - 90;
+    double desiredRotation = _animatedMapController.mapController.rotation - 25;
 
     // Define the total duration of the animation in milliseconds.
     const int animationDuration = 500;
@@ -910,11 +1133,16 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // Initialize a step counter to keep track of animation progress.
     int stepCount = 0;
 
+    // Variable to store the modified center
+
     // Create a periodic timer to update the map rotation smoothly over time.
     Timer.periodic(Duration(milliseconds: stepDelay), (timer) {
       // Calculate the new rotation angle for this step.
       double newRotation =
           _animatedMapController.mapController.rotation + stepRotation;
+
+      // Save the current map center before the rotation.
+      LatLng currentMapCenter = _animatedMapController.mapController.center;
 
       // Update the map rotation using the mapController.rotateAroundPoint() method.
       double scale = 1.21473;
@@ -930,11 +1158,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       _animatedMapController.mapController
           .rotateAroundPoint(newRotation, offset: Offset(0, offsetLng));
 
+      // Log the new rotation angle and the saved current map center.
+      log("New Rotation: $newRotation, Current Map Center: $currentMapCenter");
+
+      // Store the modified center after offset and rotation.
+      modifiedCenter = _animatedMapController.mapController.center;
+
       // Increment the step counter to keep track of the animation progress.
       stepCount++;
 
       // Check if the animation is complete by comparing the step count with total steps.
       if (stepCount >= totalSteps) {
+        // Now you have the modified center saved in 'modifiedCenter'.
+        // You can use this value as needed.
+
         // Cancel the timer when the animation is done to stop further updates.
         timer.cancel();
       }
@@ -942,6 +1179,69 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // OFFSET CHO MARKER NAVIGATE XUỐNG DƯỚI GẦN THANH BOTTOM BAR
+  // void offsetUpAndZoomIn() {
+  //   // Define the total duration of the animation in milliseconds.
+  //   const int animationDuration = 500;
+
+  //   // Define the number of steps for the animation to achieve smooth movement and zooming.
+  //   const int totalSteps = 60;
+
+  //   // Define the scaling factor for offset increment to adjust animation smoothness.
+  //   const double scale = 1.25;
+
+  //   // Calculate the offset increment for each step to move the map down smoothly.
+  //   double offsetIncrement = 0.0015 / totalSteps;
+
+  //   // Adjust the offset increment based on the device screen height for proper map centering.
+  //   if (MediaQuery.of(context).size.height < 896) {
+  //     offsetIncrement = 0.00002;
+  //   } else {
+  //     offsetIncrement = 0.00002 * scale;
+  //   }
+
+  //   // Calculate the zoom increment for each step to zoom in smoothly.
+  //   double zoomIncrement =
+  //       (18 - _animatedMapController.mapController.zoom) / totalSteps;
+
+  //   // Initialize a step counter to keep track of animation progress.
+  //   int stepCount = 0;
+
+  //   // Create a periodic timer to update the map's position and zoom level smoothly over time.
+  //   Timer.periodic(
+  //       const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
+  //     // Calculate the new latitude for this step by incrementing the current latitude.
+  //     log('center: ${_animatedMapController.mapController.center}');
+  //     // double newLatitude = curloca.latitude + offsetIncrement;
+  //     double newLatitude =
+  //         _animatedMapController.mapController.center.latitude +
+  //             offsetIncrement;
+
+  //     double newCenter = _animatedMapController.mapController.center.latitude +
+  //         offsetIncrement;
+  //     log('center after: ${newCenter}');
+  //     // Calculate the new zoom level for this step by incrementing the current zoom level.
+  //     double newZoom =
+  //         _animatedMapController.mapController.zoom + zoomIncrement;
+
+  //     // Move the map using the mapController.move() method with the new latitude and zoom level.
+  //     _animatedMapController.mapController.move(
+  //         LatLng(newLatitude,
+  //             _animatedMapController.mapController.center.longitude),
+  //         newZoom);
+
+  //     // Log the new latitude and longitude for debugging purposes.
+  //     log("New Latitude: $newLatitude, New Longitude: ${_animatedMapController.mapController.center.longitude} - offsetLatlng: $offsetIncrement");
+
+  //     // Increment the step counter to keep track of the animation progress.
+  //     stepCount++;
+
+  //     // Check if the animation is complete by comparing the step count with total steps.
+  //     if (stepCount >= totalSteps) {
+  //       // Cancel the timer when the animation is done to stop further updates.
+  //       timer.cancel();
+  //     }
+  //   });
+  // }
   void offsetUpAndZoomIn() {
     // Define the total duration of the animation in milliseconds.
     const int animationDuration = 500;
@@ -952,7 +1252,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // Define the scaling factor for offset increment to adjust animation smoothness.
     const double scale = 1.25;
 
-    // Calculate the offset increment for each step to move the map down smoothly.
+    // Calculate the offset increment for each step to move the map up smoothly.
     double offsetIncrement = 0.0015 / totalSteps;
 
     // Adjust the offset increment based on the device screen height for proper map centering.
@@ -969,19 +1269,17 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // Initialize a step counter to keep track of animation progress.
     int stepCount = 0;
 
+    // Variable to store the final center after the animation.
+    finalCenter = _animatedMapController.mapController.center;
+
     // Create a periodic timer to update the map's position and zoom level smoothly over time.
     Timer.periodic(
         const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
       // Calculate the new latitude for this step by incrementing the current latitude.
-      log('center: ${_animatedMapController.mapController.center}');
-      // double newLatitude = curloca.latitude + offsetIncrement;
       double newLatitude =
           _animatedMapController.mapController.center.latitude +
               offsetIncrement;
 
-      double newCenter = _animatedMapController.mapController.center.latitude +
-          offsetIncrement;
-      log('center after: ${newCenter}');
       // Calculate the new zoom level for this step by incrementing the current zoom level.
       double newZoom =
           _animatedMapController.mapController.zoom + zoomIncrement;
@@ -992,6 +1290,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               _animatedMapController.mapController.center.longitude),
           newZoom);
 
+      // Store the final center after the animation for debugging purposes.
+      finalCenter = LatLng(
+          newLatitude, _animatedMapController.mapController.center.longitude);
+
       // Log the new latitude and longitude for debugging purposes.
       log("New Latitude: $newLatitude, New Longitude: ${_animatedMapController.mapController.center.longitude} - offsetLatlng: $offsetIncrement");
 
@@ -1000,6 +1302,69 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
       // Check if the animation is complete by comparing the step count with total steps.
       if (stepCount >= totalSteps) {
+        // Cancel the timer when the animation is done to stop further updates.
+        timer.cancel();
+
+        // Log the final center after the animation is completed.
+        log("Final Center: Latitude: ${finalCenter.latitude}, Longitude: ${finalCenter.longitude}");
+
+        // Here you can save the finalCenter or perform any other action after the animation.
+      }
+    });
+  }
+
+  void moveMapCenterToSavedLatLng() {
+    // Retrieve the saved latitude and longitude of the modified center
+    double savedLatitude =
+        modifiedCenter.latitude; // Replace with actual saved latitude
+    double savedLongitude =
+        modifiedCenter.longitude; // Replace with actual saved longitude
+
+    // Define the total duration of the animation in milliseconds.
+    const int animationDuration = 500;
+
+    // Define the number of steps for the animation to achieve smooth movement.
+    const int totalSteps = 60;
+
+    // Calculate the latitude offset increment for each step to move the map smoothly.
+    double latOffsetIncrement =
+        (savedLatitude - _animatedMapController.mapController.center.latitude) /
+            totalSteps;
+
+    // Calculate the longitude offset increment for each step to move the map smoothly.
+    double lngOffsetIncrement = (savedLongitude -
+            _animatedMapController.mapController.center.longitude) /
+        totalSteps;
+
+    // Initialize a step counter to keep track of animation progress.
+    int stepCount = 0;
+
+    // Create a periodic timer to update the map's position smoothly over time.
+    Timer.periodic(Duration(milliseconds: animationDuration ~/ totalSteps),
+        (timer) {
+      // Calculate the new latitude and longitude for this step by incrementing the current values.
+      double newLatitude =
+          _animatedMapController.mapController.center.latitude +
+              latOffsetIncrement;
+      double newLongitude =
+          _animatedMapController.mapController.center.longitude +
+              lngOffsetIncrement;
+
+      // Move the map using the mapController.move() method with the new latitude and longitude.
+      _animatedMapController.mapController.move(
+          LatLng(newLatitude, newLongitude),
+          _animatedMapController.mapController.zoom);
+
+      // Increment the step counter to keep track of the animation progress.
+      stepCount++;
+
+      // Check if the animation is complete by comparing the step count with total steps.
+      if (stepCount >= totalSteps) {
+        // Move the map to the saved latitude and longitude.
+        _animatedMapController.mapController.move(
+            LatLng(savedLatitude, savedLongitude),
+            _animatedMapController.mapController.zoom);
+
         // Cancel the timer when the animation is done to stop further updates.
         timer.cancel();
       }
@@ -1484,59 +1849,59 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
               ],
             ),
-            Positioned(
-              bottom: isDesktop
-                  ? 150
-                  : isTablet
-                      ? 100
-                      : 120,
-              right: 50,
-              left: 50,
-              child: RadialMenu(
-                children: [
-                  RadialButton(
-                    icon: const Icon(Icons.east),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetRightAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.south_east),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetSouthEastAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.south),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetDownAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.south_west),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetSouthWestAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.west),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetLeftAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.north_west),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetNorthWestAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.north),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetUpAndZoomIn,
-                  ),
-                  RadialButton(
-                    icon: const Icon(Icons.north_east),
-                    buttonColor: Colors.blueGrey,
-                    onPress: offsetNorthEastAndZoomIn,
-                  ),
-                ],
-              ),
-            ),
+            // Positioned(
+            //   bottom: isDesktop
+            //       ? 150
+            //       : isTablet
+            //           ? 100
+            //           : 120,
+            //   right: 50,
+            //   left: 50,
+            //   child: RadialMenu(
+            //     children: [
+            //       RadialButton(
+            //         icon: const Icon(Icons.east),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetRightAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.south_east),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetSouthEastAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.south),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetDownAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.south_west),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetSouthWestAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.west),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetLeftAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.north_west),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetNorthWestAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.north),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetUpAndZoomIn,
+            //       ),
+            //       RadialButton(
+            //         icon: const Icon(Icons.north_east),
+            //         buttonColor: Colors.blueGrey,
+            //         onPress: offsetNorthEastAndZoomIn,
+            //       ),
+            //     ],
+            //   ),
+            // ),
             Positioned(
               top: 85,
               right: 5,
@@ -1576,17 +1941,44 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.cached),
                       ),
                     ),
-                    // const SizedBox(height: 3),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: offsetUpAndZoomIn,
+                        tooltip: 'Offset north',
+                        child: const Icon(Icons.north),
+                      ),
+                    ), // moveMapCenterToLatLng(finalCenter);
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: () {
+                          moveMapCenterToSavedLatLng();
+                        },
+                        tooltip: 'Move Map Center to Saved LatLng',
+                        child: const Icon(Icons.adjust),
+                      ),
+                    ),
+
                     // SizedBox(
                     //   width: 40,
                     //   height: 40,
                     //   child: FloatingActionButton(
                     //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetUpAndZoomIn,
-                    //     tooltip: 'Offset north',
-                    //     child: const Icon(Icons.north),
+                    //     onPressed: () {
+                    //       moveCenterToFinalRotationCenter;
+                    //     },
+                    //     tooltip: 'moveMapCenterToLatLng',
+                    //     child: const Icon(Icons.adjust),
                     //   ),
                     // ),
+
                     // const SizedBox(height: 3),
                     // SizedBox(
                     //   width: 40,
@@ -1738,6 +2130,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
             ),
             // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
+            // Positioned(
+            //   top: 85,
+            //   left: 250,
+            //   child: FloatingActionButton(
+            //     backgroundColor: Colors.blue,
+            //     onPressed: shareLocationFromButton,
+            //     child: const Column(
+            //       mainAxisAlignment: MainAxisAlignment.center,
+            //       children: <Widget>[
+            //         Icon(Icons.share),
+            //         Text(
+            //           "Share",
+            //           style: TextStyle(
+            //             fontSize: 12,
+            //             fontWeight: FontWeight.bold,
+            //           ),
+            //         )
+            //       ],
+            //     ),
+            //   ),
+            // ),
+
             Positioned(
               top: 23,
               left: 95,
