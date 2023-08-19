@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:animated_radial_menu/animated_radial_menu.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -112,31 +113,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         setState(() {});
       } else {
         // Handle error here if the response status code is not 200
-        print('Request failed with status: ${response.statusCode}');
+        if (kDebugMode) {
+          print('Request failed with status: ${response.statusCode}');
+        }
       }
     } catch (error) {
       // Handle any exceptions that occur during the process
-      print('Error: $error');
-    }
-  }
-
-  void _addMarkerToList(LatLng marker) async {
-    double roundedLatitude = double.parse(marker.latitude.toStringAsFixed(6));
-    double roundedLongitude = double.parse(marker.longitude.toStringAsFixed(6));
-
-    // Kiểm tra xem marker đã tồn tại trong danh sách chưa
-    bool markerExists = savedMarkers.any((LatLng savedMarker) =>
-        double.parse(savedMarker.latitude.toStringAsFixed(6)) ==
-            roundedLatitude &&
-        double.parse(savedMarker.longitude.toStringAsFixed(6)) ==
-            roundedLongitude);
-    if (!markerExists) {
-      setState(() {
-        savedMarkers.add(marker);
-      });
-      await _saveMarkersToSharedPreferences(savedMarkers);
-      // Gọi hàm để hiển thị maker trên bản đồ khi thêm mới
-      _showMarkerOnMap(marker);
+      if (kDebugMode) {
+        print('Error: $error');
+      }
     }
   }
 
@@ -151,15 +136,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
 // ham  showsaveMarker
   void _showSaveMarkersList() async {
-    List<LatLng> savedMarkersToShow =
-        await _getSavedMarkersFromSharedPreferences();
-    // ignore: use_build_context_synchronously
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) {
         return Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -172,7 +154,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 16),
               savedMarkers.isEmpty
-                  ? Text('No saved markers.')
+                  ? const Text('No saved markers.')
                   : ListView.builder(
                       shrinkWrap: true,
                       itemCount: savedMarkers.length,
@@ -244,18 +226,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         .toList();
 
     await prefs.setStringList('savedMarkers', markerList);
-  }
-
-// Khôi phục danh sách các LatLng từ SharedPreferences
-  Future<List<LatLng>> _getSavedMarkersFromSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> markerList = prefs.getStringList('savedMarkers') ?? [];
-    return markerList.map((String marker) {
-      List<String> parts = marker.split(',');
-      double latitude = double.parse(parts[0]);
-      double longitude = double.parse(parts[1]);
-      return LatLng(latitude, longitude);
-    }).toList();
   }
 
   Future<void> _loadSavedMarkers() async {
@@ -523,6 +493,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // thanh search mở fullscreen
+
   void _showSearchFullScreen() {
     showModalBottomSheet(
       context: context,
@@ -566,6 +537,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     setState(() {}); // Trigger a rebuild of the widget
                   });
 
+                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
                   _openSearchModal(); // Open the search modal back
                 },
@@ -573,217 +545,219 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
               Stack(
                 children: [
-                  Column(children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height *
-                                0.1, // Reduced the height to make the buttons smaller
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 14,
-                              itemBuilder: (context, index) {
-                                List<IconData> buttonIcons = [
-                                  Icons.bookmark,
-                                  Icons.local_parking,
-                                  Icons.ev_station,
-                                  Icons.local_gas_station,
-                                  Icons.fastfood,
-                                  Icons.local_cafe,
-                                  Icons.shopping_cart,
-                                  Icons.medication,
-                                  Icons.store,
-                                  Icons.local_hospital,
-                                  Icons.hotel,
-                                  Icons.park,
-                                  Icons.garage,
-                                  Icons.more_horiz,
-                                ];
+                  Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.1, // Reduced the height to make the buttons smaller
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 14,
+                                itemBuilder: (context, index) {
+                                  List<IconData> buttonIcons = [
+                                    Icons.bookmark,
+                                    Icons.local_parking,
+                                    Icons.ev_station,
+                                    Icons.local_gas_station,
+                                    Icons.fastfood,
+                                    Icons.local_cafe,
+                                    Icons.shopping_cart,
+                                    Icons.medication,
+                                    Icons.store,
+                                    Icons.local_hospital,
+                                    Icons.hotel,
+                                    Icons.park,
+                                    Icons.garage,
+                                    Icons.more_horiz,
+                                  ];
 
-                                List<String> buttonTexts = [
-                                  'Saved',
-                                  'Parking',
-                                  'Electric',
-                                  'Gas',
-                                  'Food',
-                                  'Coffee',
-                                  'Shopping',
-                                  'Pharmacies',
-                                  'Grocery',
-                                  'Hospital ',
-                                  'Hotel',
-                                  'Parks',
-                                  'Garages',
-                                  'More',
-                                ];
+                                  List<String> buttonTexts = [
+                                    'Saved',
+                                    'Parking',
+                                    'Electric',
+                                    'Gas',
+                                    'Food',
+                                    'Coffee',
+                                    'Shopping',
+                                    'Pharmacies',
+                                    'Grocery',
+                                    'Hospital ',
+                                    'Hotel',
+                                    'Parks',
+                                    'Garages',
+                                    'More',
+                                  ];
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal:
-                                          4.0), // Reduced horizontal padding
-                                  child: SizedBox(
-                                    width:
-                                        70, // Reduced the width to make the buttons smaller
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        if (kDebugMode) {
-                                          print('Button $index pressed!');
-                                        }
-                                        if (index == 0) {
-                                          _showSaveMarkersList();
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.black,
-                                        backgroundColor: Colors.white,
-                                        padding: const EdgeInsets.all(
-                                            6.0), // Reduced padding inside the button
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              12.0), // Slightly reduced the border radius
-                                          side: const BorderSide(
-                                            color: Colors.grey,
-                                            width:
-                                                0.2, // Set the border width to 1.0 pixel
-                                          ),
-                                        ),
-                                        elevation:
-                                            0.0, // Set the elevation to 0.0 to remove the shadow
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            buttonIcons[index],
-                                            size: 20.0, // Reduced icon size
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(
-                                              height:
-                                                  1.0), // Reduced gap between icon and text
-                                          Flexible(
-                                            child: Text(
-                                              buttonTexts[index],
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize:
-                                                    11.0, // Reduced text size
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines:
-                                                  1, // Ensures the text stays in one line
-                                              overflow: TextOverflow
-                                                  .ellipsis, // Truncate with ellipsis if overflowed
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal:
+                                            4.0), // Reduced horizontal padding
+                                    child: SizedBox(
+                                      width:
+                                          70, // Reduced the width to make the buttons smaller
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          if (kDebugMode) {
+                                            print('Button $index pressed!');
+                                          }
+                                          if (index == 0) {
+                                            _showSaveMarkersList();
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.black,
+                                          backgroundColor: Colors.white,
+                                          padding: const EdgeInsets.all(
+                                              6.0), // Reduced padding inside the button
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                12.0), // Slightly reduced the border radius
+                                            side: const BorderSide(
+                                              color: Colors.grey,
+                                              width:
+                                                  0.2, // Set the border width to 1.0 pixel
                                             ),
                                           ),
-                                        ],
+                                          elevation:
+                                              0.0, // Set the elevation to 0.0 to remove the shadow
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              buttonIcons[index],
+                                              size: 20.0, // Reduced icon size
+                                              color: Colors.grey,
+                                            ),
+                                            const SizedBox(
+                                                height:
+                                                    1.0), // Reduced gap between icon and text
+                                            Flexible(
+                                              child: Text(
+                                                buttonTexts[index],
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize:
+                                                      11.0, // Reduced text size
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines:
+                                                    1, // Ensures the text stays in one line
+                                                overflow: TextOverflow
+                                                    .ellipsis, // Truncate with ellipsis if overflowed
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Container 4 - Another Additional Container
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    // Container 4 - Another Additional Container
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
+                        ),
+                        child: const ListTile(
+                          leading: Icon(
+                            Icons.home,
+                            color: Colors.pink,
+                          ),
+                          title: Text(
+                            'Home',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Set once and go',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
                           ),
                         ),
                       ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.home,
-                          color: Colors.pink,
-                        ),
-                        title: Text(
-                          'Home',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
+                            ),
                           ),
                         ),
-                        subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
+                        child: const ListTile(
+                          leading: Icon(
+                            Icons.work,
+                            color: Colors.brown,
                           ),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
+                          title: Text(
+                            'Work',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                      ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.work,
-                          color: Colors.brown,
-                        ),
-                        title: Text(
-                          'Work',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
+                          subtitle: Text(
+                            'Set once and go',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                        child: const ListTile(
+                          leading: Icon(
+                            Icons.calendar_month,
+                            color: Colors.redAccent,
+                          ),
+                          title: Text(
+                            'Connect calendar',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Sync your calendar for route planning',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
                           ),
                         ),
                       ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.calendar_month,
-                          color: Colors.redAccent,
-                        ),
-                        title: Text(
-                          'Connect calendar',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Sync your calendar for route planning',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   _options.isNotEmpty
                       ? SizedBox(
                           height: MediaQuery.of(context).size.height * 0.7,
@@ -826,7 +800,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         )
-                      : Container(),
+                      : Container()
                 ],
               ),
             ],
@@ -879,6 +853,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     setState(() {}); // Trigger a rebuild of the widget
                   });
 
+                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
                   _openSearchModal(); // Open the search modal back
                 },
@@ -1275,7 +1250,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        bool _isSavedPressed = false;
         // Log the latitude and longitude of the tapped marker
         log("Tapped Marker - Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}");
 
@@ -1301,12 +1275,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             TextButton(
               onPressed: () async {
                 setState(() {
-                  _isSavedPressed = true;
                   // Lưu lại vị trí của marker vào danh sách lưu trữ
                   savedMarkers.add(tappedPoint);
                 });
                 await _saveMarkersToSharedPreferences(savedMarkers);
+                // ignore: use_build_context_synchronously
                 Navigator.of(context).pop(); // Đóng hộp thoại
+                // ignore: use_build_context_synchronously
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Marker saved'),
@@ -1415,6 +1390,63 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // XOAY ĐIỀU HƯỚNG TÂM XOAY QUANH ĐIỂM OFFSET
+  void moveMapCenterToSavedLatLng() {
+    // Retrieve the saved latitude and longitude of the modified center
+    double savedLatitude =
+        modifiedCenter.latitude; // Replace with actual saved latitude
+    double savedLongitude =
+        modifiedCenter.longitude; // Replace with actual saved longitude
+
+    // Define the total duration of the animation in milliseconds.
+    const int animationDuration = 500;
+
+    // Define the number of steps for the animation to achieve smooth movement.
+    const int totalSteps = 60;
+
+    // Calculate the latitude offset increment for each step to move the map smoothly.
+    double latOffsetIncrement =
+        (savedLatitude - _animatedMapController.mapController.center.latitude) /
+            totalSteps;
+
+    // Calculate the longitude offset increment for each step to move the map smoothly.
+    double lngOffsetIncrement = (savedLongitude -
+            _animatedMapController.mapController.center.longitude) /
+        totalSteps;
+
+    // Initialize a step counter to keep track of animation progress.
+    int stepCount = 0;
+
+    // Create a periodic timer to update the map's position smoothly over time.
+    Timer.periodic(
+        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
+      // Calculate the new latitude and longitude for this step by incrementing the current values.
+      double newLatitude =
+          _animatedMapController.mapController.center.latitude +
+              latOffsetIncrement;
+      double newLongitude =
+          _animatedMapController.mapController.center.longitude +
+              lngOffsetIncrement;
+
+      // Move the map using the mapController.move() method with the new latitude and longitude.
+      _animatedMapController.mapController.move(
+          LatLng(newLatitude, newLongitude),
+          _animatedMapController.mapController.zoom);
+
+      // Increment the step counter to keep track of the animation progress.
+      stepCount++;
+
+      // Check if the animation is complete by comparing the step count with total steps.
+      if (stepCount >= totalSteps) {
+        // Move the map to the saved latitude and longitude.
+        _animatedMapController.mapController.move(
+            LatLng(savedLatitude, savedLongitude),
+            _animatedMapController.mapController.zoom);
+
+        // Cancel the timer when the animation is done to stop further updates.
+        timer.cancel();
+      }
+    });
+  }
 
   late LatLng modifiedCenter;
   void rotateMapAroundMarker() {
@@ -1482,7 +1514,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       }
     });
   }
-
 // OFFSET CHO MARKER NAVIGATE XUỐNG DƯỚI GẦN THANH BOTTOM BAR
 
   void moveMapToSavedCenter() {
@@ -1608,64 +1639,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         log("Final Center: Latitude: ${finalCenter.latitude}, Longitude: ${finalCenter.longitude}");
 
         // Here you can save the finalCenter or perform any other action after the animation.
-      }
-    });
-  }
-
-  void moveMapCenterToSavedLatLng() {
-    // Retrieve the saved latitude and longitude of the modified center
-    double savedLatitude =
-        modifiedCenter.latitude; // Replace with actual saved latitude
-    double savedLongitude =
-        modifiedCenter.longitude; // Replace with actual saved longitude
-
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement.
-    const int totalSteps = 60;
-
-    // Calculate the latitude offset increment for each step to move the map smoothly.
-    double latOffsetIncrement =
-        (savedLatitude - _animatedMapController.mapController.center.latitude) /
-            totalSteps;
-
-    // Calculate the longitude offset increment for each step to move the map smoothly.
-    double lngOffsetIncrement = (savedLongitude -
-            _animatedMapController.mapController.center.longitude) /
-        totalSteps;
-
-    // Initialize a step counter to keep track of animation progress.
-    int stepCount = 0;
-
-    // Create a periodic timer to update the map's position smoothly over time.
-    Timer.periodic(
-        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
-      // Calculate the new latitude and longitude for this step by incrementing the current values.
-      double newLatitude =
-          _animatedMapController.mapController.center.latitude +
-              latOffsetIncrement;
-      double newLongitude =
-          _animatedMapController.mapController.center.longitude +
-              lngOffsetIncrement;
-
-      // Move the map using the mapController.move() method with the new latitude and longitude.
-      _animatedMapController.mapController.move(
-          LatLng(newLatitude, newLongitude),
-          _animatedMapController.mapController.zoom);
-
-      // Increment the step counter to keep track of the animation progress.
-      stepCount++;
-
-      // Check if the animation is complete by comparing the step count with total steps.
-      if (stepCount >= totalSteps) {
-        // Move the map to the saved latitude and longitude.
-        _animatedMapController.mapController.move(
-            LatLng(savedLatitude, savedLongitude),
-            _animatedMapController.mapController.zoom);
-
-        // Cancel the timer when the animation is done to stop further updates.
-        timer.cancel();
       }
     });
   }
