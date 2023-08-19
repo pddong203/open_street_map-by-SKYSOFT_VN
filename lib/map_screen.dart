@@ -5,7 +5,6 @@ import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
@@ -16,8 +15,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:skysoft/api.dart';
 import 'SiderBar.dart';
-// import 'package:animated_radial_menu/animated_radial_menu.dart';
-// import 'package:share_plus/share_plus.dart';
 
 // ===================CÁC CLASS PHỤ =================================================================================================================================================================
 class LatLong {
@@ -76,8 +73,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<InfoLocation> _options = <InfoLocation>[];
-  Timer? _debounce;
-  var client = http.Client();
   LatLng route = const LatLng(0, 0);
   //Animation map
   static const _useTransformerId = 'useTransformerId';
