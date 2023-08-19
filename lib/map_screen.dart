@@ -1484,69 +1484,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // OFFSET CHO MARKER NAVIGATE XUỐNG DƯỚI GẦN THANH BOTTOM BAR
-  // void offsetUpAndZoomIn() {
-  //   // Define the total duration of the animation in milliseconds.
-  //   const int animationDuration = 500;
 
-  //   // Define the number of steps for the animation to achieve smooth movement and zooming.
-  //   const int totalSteps = 60;
-
-  //   // Define the scaling factor for offset increment to adjust animation smoothness.
-  //   const double scale = 1.25;
-
-  //   // Calculate the offset increment for each step to move the map down smoothly.
-  //   double offsetIncrement = 0.0015 / totalSteps;
-
-  //   // Adjust the offset increment based on the device screen height for proper map centering.
-  //   if (MediaQuery.of(context).size.height < 896) {
-  //     offsetIncrement = 0.00002;
-  //   } else {
-  //     offsetIncrement = 0.00002 * scale;
-  //   }
-
-  //   // Calculate the zoom increment for each step to zoom in smoothly.
-  //   double zoomIncrement =
-  //       (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-  //   // Initialize a step counter to keep track of animation progress.
-  //   int stepCount = 0;
-
-  //   // Create a periodic timer to update the map's position and zoom level smoothly over time.
-  //   Timer.periodic(
-  //       const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
-  //     // Calculate the new latitude for this step by incrementing the current latitude.
-  //     log('center: ${_animatedMapController.mapController.center}');
-  //     // double newLatitude = curloca.latitude + offsetIncrement;
-  //     double newLatitude =
-  //         _animatedMapController.mapController.center.latitude +
-  //             offsetIncrement;
-
-  //     double newCenter = _animatedMapController.mapController.center.latitude +
-  //         offsetIncrement;
-  //     log('center after: ${newCenter}');
-  //     // Calculate the new zoom level for this step by incrementing the current zoom level.
-  //     double newZoom =
-  //         _animatedMapController.mapController.zoom + zoomIncrement;
-
-  //     // Move the map using the mapController.move() method with the new latitude and zoom level.
-  //     _animatedMapController.mapController.move(
-  //         LatLng(newLatitude,
-  //             _animatedMapController.mapController.center.longitude),
-  //         newZoom);
-
-  //     // Log the new latitude and longitude for debugging purposes.
-  //     log("New Latitude: $newLatitude, New Longitude: ${_animatedMapController.mapController.center.longitude} - offsetLatlng: $offsetIncrement");
-
-  //     // Increment the step counter to keep track of the animation progress.
-  //     stepCount++;
-
-  //     // Check if the animation is complete by comparing the step count with total steps.
-  //     if (stepCount >= totalSteps) {
-  //       // Cancel the timer when the animation is done to stop further updates.
-  //       timer.cancel();
-  //     }
-  //   });
-  // }
   void moveMapToSavedCenter() {
     // Use the saved finalCenter from the offset animation
     LatLng targetCenter = finalCenter;
@@ -1554,8 +1492,53 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     // Define the desired zoom level for the map
     double desiredZoom = 18; // You can adjust this value as needed
 
-    // Move the map to the saved center and set the desired zoom level
-    _animatedMapController.mapController.move(targetCenter, desiredZoom);
+    // Define the total duration of the animation in milliseconds.
+    const int animationDuration = 500;
+
+    // Define the number of steps for the animation to achieve smooth movement.
+    const int totalSteps = 60;
+
+    // Calculate the latitude offset increment for each step to move the map smoothly.
+    double latOffsetIncrement = (targetCenter.latitude -
+            _animatedMapController.mapController.center.latitude) /
+        totalSteps;
+
+    // Calculate the longitude offset increment for each step to move the map smoothly.
+    double lngOffsetIncrement = (targetCenter.longitude -
+            _animatedMapController.mapController.center.longitude) /
+        totalSteps;
+
+    // Initialize a step counter to keep track of animation progress.
+    int stepCount = 0;
+
+    // Create a periodic timer to update the map's position smoothly over time.
+    Timer.periodic(
+        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
+      // Calculate the new latitude and longitude for this step by incrementing the current values.
+      double newLatitude =
+          _animatedMapController.mapController.center.latitude +
+              latOffsetIncrement;
+      double newLongitude =
+          _animatedMapController.mapController.center.longitude +
+              lngOffsetIncrement;
+
+      // Move the map using the mapController.move() method with the new latitude and longitude.
+      _animatedMapController.mapController.move(
+          LatLng(newLatitude, newLongitude),
+          _animatedMapController.mapController.zoom);
+
+      // Increment the step counter to keep track of the animation progress.
+      stepCount++;
+
+      // Check if the animation is complete by comparing the step count with total steps.
+      if (stepCount >= totalSteps) {
+        // Move the map to the target center and set the desired zoom level.
+        _animatedMapController.mapController.move(targetCenter, desiredZoom);
+
+        // Cancel the timer when the animation is done to stop further updates.
+        timer.cancel();
+      }
+    });
   }
 
   void offsetUpAndZoomIn() {
@@ -2263,6 +2246,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
+                        onPressed: () {
+                          moveMapCenterToSavedLatLng();
+                        },
+                        tooltip: 'Move Map Center to Saved LatLng',
+                        child: const Icon(Icons.adjust),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
                         onPressed: offsetUpAndZoomIn,
                         tooltip: 'Offset north',
                         child: const Icon(Icons.north),
@@ -2281,110 +2277,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.filter_tilt_shift),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: () {
-                          moveMapCenterToSavedLatLng();
-                        },
-                        tooltip: 'Move Map Center to Saved LatLng',
-                        child: const Icon(Icons.adjust),
-                      ),
-                    ),
-
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: () {
-                    //       moveCenterToFinalRotationCenter;
-                    //     },
-                    //     tooltip: 'moveMapCenterToLatLng',
-                    //     child: const Icon(Icons.adjust),
-                    //   ),
-                    // ),
-
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetDownAndZoomIn,
-                    //     tooltip: 'Offset South',
-                    //     child: const Icon(Icons.south),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetRightAndZoomIn,
-                    //     tooltip: 'Offset East',
-                    //     child: const Icon(Icons.east),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetLeftAndZoomIn,
-                    //     tooltip: 'Offset West',
-                    //     child: const Icon(Icons.west),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetNorthEastAndZoomIn,
-                    //     tooltip: 'Offset NorthEast',
-                    //     child: const Icon(Icons.north_east),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetNorthWestAndZoomIn,
-                    //     tooltip: 'Offset NorthWest',
-                    //     child: const Icon(Icons.north_west),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetSouthWestAndZoomIn,
-                    //     tooltip: 'Offset SouthWest',
-                    //     child: const Icon(Icons.south_west),
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: offsetSouthEastAndZoomIn,
-                    //     tooltip: 'Offset SouthEast',
-                    //     child: const Icon(Icons.south_east),
-                    //   ),
-                    // ),
                     const SizedBox(height: 3),
                     SizedBox(
                       width: 40,
