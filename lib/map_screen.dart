@@ -493,7 +493,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // thanh search mở fullscreen
-
   void _showSearchFullScreen() {
     showModalBottomSheet(
       context: context,
@@ -1397,29 +1396,20 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     double savedLongitude =
         modifiedCenter.longitude; // Replace with actual saved longitude
 
-    // Define the total duration of the animation in milliseconds.
     const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement.
     const int totalSteps = 60;
 
-    // Calculate the latitude offset increment for each step to move the map smoothly.
     double latOffsetIncrement =
         (savedLatitude - _animatedMapController.mapController.center.latitude) /
             totalSteps;
-
-    // Calculate the longitude offset increment for each step to move the map smoothly.
     double lngOffsetIncrement = (savedLongitude -
             _animatedMapController.mapController.center.longitude) /
         totalSteps;
 
-    // Initialize a step counter to keep track of animation progress.
     int stepCount = 0;
 
-    // Create a periodic timer to update the map's position smoothly over time.
-    Timer.periodic(
-        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
-      // Calculate the new latitude and longitude for this step by incrementing the current values.
+    Timer.periodic(Duration(milliseconds: animationDuration ~/ totalSteps),
+        (timer) {
       double newLatitude =
           _animatedMapController.mapController.center.latitude +
               latOffsetIncrement;
@@ -1427,22 +1417,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           _animatedMapController.mapController.center.longitude +
               lngOffsetIncrement;
 
-      // Move the map using the mapController.move() method with the new latitude and longitude.
-      _animatedMapController.mapController.move(
-          LatLng(newLatitude, newLongitude),
-          _animatedMapController.mapController.zoom);
+      // Calculate the desired zoom level (e.g., 18)
+      double desiredZoom = 18;
 
-      // Increment the step counter to keep track of the animation progress.
+      // Move the map using the mapController.move() method with the new latitude, longitude, and zoom level.
+      _animatedMapController.mapController
+          .move(LatLng(newLatitude, newLongitude), desiredZoom);
+
       stepCount++;
 
-      // Check if the animation is complete by comparing the step count with total steps.
       if (stepCount >= totalSteps) {
-        // Move the map to the saved latitude and longitude.
-        _animatedMapController.mapController.move(
-            LatLng(savedLatitude, savedLongitude),
-            _animatedMapController.mapController.zoom);
-
-        // Cancel the timer when the animation is done to stop further updates.
+        // Move the map to the saved latitude and longitude with the desired zoom level.
+        _animatedMapController.mapController
+            .move(LatLng(savedLatitude, savedLongitude), desiredZoom);
         timer.cancel();
       }
     });
