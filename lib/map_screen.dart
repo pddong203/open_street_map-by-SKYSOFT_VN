@@ -12,6 +12,7 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:skysoft/api.dart';
@@ -84,7 +85,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   final bool _useTransformer = true;
   late final _animatedMapController = AnimatedMapController(vsync: this);
   bool isInitialZoom = false;
-
   late LatLng finalCenter;
 
 // ============================= VOID LOGIC CỦA CÁC BUTTON =================================================
@@ -159,6 +159,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void _showSaveMarkersList() async {
     List<LatLng> savedMarkersToShow =
         await _getSavedMarkersFromSharedPreferences();
+    // ignore: use_build_context_synchronously
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -168,14 +169,14 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'Saved Markers',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               savedMarkers.isEmpty
                   ? Text('No saved markers.')
                   : ListView.builder(
@@ -186,7 +187,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         return ListTile(
                           title: Text(
                             'Marker ${index + 1}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -194,21 +195,21 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             'Latitude: ${marker.latitude}, Longitude: ${marker.longitude}',
                           ),
                           trailing: IconButton(
-                            icon: Icon(Icons.delete),
+                            icon: const Icon(Icons.delete),
                             onPressed: () {
                               showDialog(
                                 context: context,
                                 builder: (BuildContext dialogContext) {
                                   return AlertDialog(
-                                    title: Text('Confirm Delete'),
-                                    content: Text(
+                                    title: const Text('Confirm Delete'),
+                                    content: const Text(
                                         'Are you sure you want to delete this marker?'),
                                     actions: [
                                       TextButton(
                                         onPressed: () {
                                           Navigator.pop(dialogContext);
                                         },
-                                        child: Text('Cancel'),
+                                        child: const Text('Cancel'),
                                       ),
                                       TextButton(
                                         onPressed: () {
@@ -217,7 +218,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                           Navigator.pop(context);
                                           _showSaveMarkersList();
                                         },
-                                        child: Text('Delete'),
+                                        child: const Text('Delete'),
                                       ),
                                     ],
                                   );
@@ -562,20 +563,330 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   filled: true,
                   fillColor: Colors.grey[300],
                 ),
-                onChanged: (String value) {
-                  if (_debounce?.isActive ?? false) {
-                    _debounce?.cancel();
+                onFieldSubmitted: (String value) async {
+                  if (kDebugMode) {
+                    print(value);
                   }
 
-                  _debounce =
-                      Timer(const Duration(milliseconds: 100), () async {
-                    if (kDebugMode) {
-                      // print(value);
-                    }
-
-                    await repNameLocation(value)
-                        .then((value) => {setState(() {})});
+                  await repNameLocation(value).then((value) {
+                    setState(() {}); // Trigger a rebuild of the widget
                   });
+
+                  Navigator.of(context).pop(); // Close the existing modal
+                  _openSearchModal(); // Open the search modal back
+                },
+              ),
+
+              Stack(
+                children: [
+                  Column(children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height *
+                                0.1, // Reduced the height to make the buttons smaller
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: 14,
+                              itemBuilder: (context, index) {
+                                List<IconData> buttonIcons = [
+                                  Icons.bookmark,
+                                  Icons.local_parking,
+                                  Icons.ev_station,
+                                  Icons.local_gas_station,
+                                  Icons.fastfood,
+                                  Icons.local_cafe,
+                                  Icons.shopping_cart,
+                                  Icons.medication,
+                                  Icons.store,
+                                  Icons.local_hospital,
+                                  Icons.hotel,
+                                  Icons.park,
+                                  Icons.garage,
+                                  Icons.more_horiz,
+                                ];
+
+                                List<String> buttonTexts = [
+                                  'Saved',
+                                  'Parking',
+                                  'Electric',
+                                  'Gas',
+                                  'Food',
+                                  'Coffee',
+                                  'Shopping',
+                                  'Pharmacies',
+                                  'Grocery',
+                                  'Hospital ',
+                                  'Hotel',
+                                  'Parks',
+                                  'Garages',
+                                  'More',
+                                ];
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal:
+                                          4.0), // Reduced horizontal padding
+                                  child: SizedBox(
+                                    width:
+                                        70, // Reduced the width to make the buttons smaller
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        if (kDebugMode) {
+                                          print('Button $index pressed!');
+                                        }
+                                        if (index == 0) {
+                                          _showSaveMarkersList();
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor: Colors.black,
+                                        backgroundColor: Colors.white,
+                                        padding: const EdgeInsets.all(
+                                            6.0), // Reduced padding inside the button
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12.0), // Slightly reduced the border radius
+                                          side: const BorderSide(
+                                            color: Colors.grey,
+                                            width:
+                                                0.2, // Set the border width to 1.0 pixel
+                                          ),
+                                        ),
+                                        elevation:
+                                            0.0, // Set the elevation to 0.0 to remove the shadow
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            buttonIcons[index],
+                                            size: 20.0, // Reduced icon size
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(
+                                              height:
+                                                  1.0), // Reduced gap between icon and text
+                                          Flexible(
+                                            child: Text(
+                                              buttonTexts[index],
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize:
+                                                    11.0, // Reduced text size
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines:
+                                                  1, // Ensures the text stays in one line
+                                              overflow: TextOverflow
+                                                  .ellipsis, // Truncate with ellipsis if overflowed
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Container 4 - Another Additional Container
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey[300]!,
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      child: const ListTile(
+                        leading: Icon(
+                          Icons.home,
+                          color: Colors.pink,
+                        ),
+                        title: Text(
+                          'Home',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Set once and go',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey[300]!,
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      child: const ListTile(
+                        leading: Icon(
+                          Icons.work,
+                          color: Colors.brown,
+                        ),
+                        title: Text(
+                          'Work',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Set once and go',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey[300]!,
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      child: const ListTile(
+                        leading: Icon(
+                          Icons.calendar_month,
+                          color: Colors.redAccent,
+                        ),
+                        title: Text(
+                          'Connect calendar',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Sync your calendar for route planning',
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  _options.isNotEmpty
+                      ? SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.7,
+                          child: Container(
+                            color: Colors.white,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount:
+                                  _options.length > 20 ? 20 : _options.length,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Colors.black, width: 0.1),
+                                    ),
+                                  ),
+                                  child: ListTile(
+                                    title: Text(_options[index].displayname),
+                                    onTap: () {
+                                      _animatedMapController.mapController.move(
+                                        LatLng(_options[index].lat,
+                                            _options[index].lon),
+                                        15.0,
+                                      );
+                                      _focusNode.unfocus();
+                                      handleSearchTap(
+                                        LatLng(_options[index].lat,
+                                            _options[index].lon),
+                                      );
+
+                                      _options.clear();
+                                      _searchController.clear();
+                                      setState(() {});
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      : Container(),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openSearchModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          margin: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.topCenter,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+
+              // Container 1 - Search TextFormField
+              TextFormField(
+                controller: _searchController,
+                focusNode: _focusNode,
+                decoration: InputDecoration(
+                  hintText: 'Where to ?',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  prefixIcon:
+                      const Icon(Icons.search, color: Colors.blueAccent),
+                  suffixIcon: const Icon(Icons.mic, color: Colors.red),
+                  filled: true,
+                  fillColor: Colors.grey[300],
+                ),
+                onFieldSubmitted: (String value) async {
+                  if (kDebugMode) {
+                    print(value);
+                  }
+
+                  await repNameLocation(value).then((value) {
+                    setState(() {}); // Trigger a rebuild of the widget
+                  });
+
+                  Navigator.of(context).pop(); // Close the existing modal
+                  _openSearchModal(); // Open the search modal back
                 },
               ),
 
@@ -928,7 +1239,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           width: 100,
           height: 100,
           builder: (context) => IconButton(
-            icon: Icon(Icons.location_on),
+            icon: const Icon(Icons.location_on),
             color: Colors.red,
             iconSize: 45,
             onPressed: () => handleMarkerTap(marker),
@@ -1003,7 +1314,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 await _saveMarkersToSharedPreferences(savedMarkers);
                 Navigator.of(context).pop(); // Đóng hộp thoại
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                  const SnackBar(
                     content: Text('Marker saved'),
                     duration:
                         Duration(seconds: 2), // Thời gian hiển thị của SnackBar
@@ -1340,8 +1651,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     int stepCount = 0;
 
     // Create a periodic timer to update the map's position smoothly over time.
-    Timer.periodic(Duration(milliseconds: animationDuration ~/ totalSteps),
-        (timer) {
+    Timer.periodic(
+        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
       // Calculate the new latitude and longitude for this step by incrementing the current values.
       double newLatitude =
           _animatedMapController.mapController.center.latitude +
