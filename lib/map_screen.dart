@@ -12,7 +12,6 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:skysoft/api.dart';
@@ -1553,6 +1552,17 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   //     }
   //   });
   // }
+  void moveMapToSavedCenter() {
+    // Use the saved finalCenter from the offset animation
+    LatLng targetCenter = finalCenter;
+
+    // Define the desired zoom level for the map
+    double desiredZoom = 18; // You can adjust this value as needed
+
+    // Move the map to the saved center and set the desired zoom level
+    _animatedMapController.mapController.move(targetCenter, desiredZoom);
+  }
+
   void offsetUpAndZoomIn() {
     // Define the total duration of the animation in milliseconds.
     const int animationDuration = 500;
@@ -2263,6 +2273,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         child: const Icon(Icons.north),
                       ),
                     ), // moveMapCenterToLatLng(finalCenter);
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.blueGrey,
+                        onPressed: () {
+                          moveMapToSavedCenter();
+                        },
+                        tooltip: 'Center after offset',
+                        child: const Icon(Icons.filter_tilt_shift),
+                      ),
+                    ),
                     const SizedBox(height: 3),
                     SizedBox(
                       width: 40,

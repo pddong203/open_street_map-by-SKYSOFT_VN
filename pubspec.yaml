@@ -47,7 +47,6 @@ dependencies:
   animated_radial_menu: ^0.0.1
   share_plus: ^7.1.0
   shared_preferences: ^2.2.0
-  material_floating_search_bar_2: ^0.5.0
 
 dev_dependencies:
   flutter_test:
