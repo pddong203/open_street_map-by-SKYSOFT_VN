@@ -536,7 +536,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     setState(() {}); // Trigger a rebuild of the widget
                   });
 
-                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
                   _openSearchModal(); // Open the search modal back
                 },
@@ -1127,7 +1126,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   getCoordinates() async {
     // Requesting for openrouteservice api
     var response = await http.get(getRouteUrl(
-        "105.7798917,21.0528818", '105.78040038164905, 21.05396746735106'));
+        "21.052895356327777, 105.77986458185414", '21.052962, 105.779735'));
     setState(() {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
@@ -1921,70 +1920,114 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         desiredAccuracy: LocationAccuracy.best);
   }
 
-  // Lấy ra vị trí hiện tại bằng GPS
+// Lấy ra vị trí hiện tại bằng GPS
+  String speedText = "0 km/h";
+  bool isTracking = false; // Track the current tracking state
+
+  Timer? timer; // Store the timer instance for later cancellation
+
+  void toggleLocationTracking() {
+    if (isTracking) {
+      stopLocationTracking(); // If tracking is active, stop it
+    } else {
+      startLocationTracking(); // If tracking is inactive, start it
+    }
+  }
+
+  void startLocationTracking() {
+    // Set up a periodic timer to update the location and speed
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (kDebugMode) {
+        print("Updating location and speed...");
+      }
+      currentLoc(); // Call the current location update function
+    });
+
+    isTracking = true; // Set tracking state to active
+  }
+
+  void stopLocationTracking() {
+    // Cancel the timer and reset tracking state
+    timer?.cancel();
+    isTracking = false;
+  }
+
   void currentLoc() async {
     Position data = await _determinePosition();
-    log(data.latitude.toString());
-    log(data.longitude.toString());
+    double speed = data.speed; // Speed in m/s
+
+    // Update the speed text with rounded value
+    int roundedSpeed =
+        (speed * 3.6).toInt(); // Round the speed to the nearest integer
+    speedText = "$roundedSpeed km/h";
 
     setState(() {
       curloca = LatLng(data.latitude, data.longitude);
-      points.add(curloca); // Add the current location as a new point
-
-      markers.removeWhere((marker) =>
-          marker.builder ==
-          buildNavigationMarker); // Remove the navigation marker
-      markers.add(
-        Marker(
-          point: curloca,
-          width: 80,
-          height: 80,
-          builder: buildNavigationMarker, // Use the navigation marker builder
-        ),
-      );
-      log('Zoom lever ${_animatedMapController.mapController.zoom}');
-      // Check if the initial zoom animation has already run, if not, run the animation
-      if (!isInitialZoom) {
-        isInitialZoom =
-            true; // Set the flag to true to prevent running the animation again
-
-        // Store the initial zoom level and adjust the target zoom level
-        double initialZoom = _animatedMapController.mapController.zoom;
-        double targetZoom = initialZoom +
-            2.5; // Increase the targetZoom for more zoom-in effect
-
-        // Create a custom zoom tween to smoothly animate the zoom level
-        const animationDuration = Duration(
-            seconds: 3); // Adjust the duration to control the smoothness
-        // Increase the number of steps for a smoother animation
-        final animationController = AnimationController(
-          vsync: this,
-          duration: animationDuration,
-        );
-        final zoomTween = Tween<double>(begin: initialZoom, end: targetZoom);
-
-        // Start the animation and update the map controller's zoom level
-        animationController.forward();
-        animationController.addListener(() {
-          final currentZoom = zoomTween.evaluate(animationController);
-          _animatedMapController.mapController.move(curloca, currentZoom);
-        });
-      } else {
-        // If the initial zoom animation has already been performed, simply move the map to the current location without zooming
-        double currentZoom = _animatedMapController.mapController.zoom;
-
-        // Check if the current zoom level is less than 18, if so, zoom in to level 18
-        if (currentZoom < 18.0) {
-          _animatedMapController.mapController.move(curloca, 18.0);
-        } else {
-          // If the current zoom level is already greater than or equal to 18, just move to the new location without zooming
-          _animatedMapController.mapController.move(curloca, currentZoom);
-        }
-      }
+      updateMarkerAndZoom();
     });
   }
+// Declare a variable to hold the navigation marker
 
-  IconButton buildNavigationMarker(BuildContext context) {
+  Marker? navigationMarker; // Use a nullable type for navigationMarker
+
+  void updateMarkerAndZoom() {
+    // Remove the existing navigation marker if it exists
+    if (navigationMarker != null) {
+      markers.remove(navigationMarker);
+    }
+
+    // Create a new navigation marker
+    navigationMarker = Marker(
+      point: curloca,
+      width: 80,
+      height: 80,
+      builder: (ctx) =>
+          buildNavigationMarker(ctx, speedText), // Update the marker's builder
+    );
+
+    // Add the new navigation marker to the markers list
+    markers.add(navigationMarker!); // Use the non-null assertion operator (!)
+
+    if (!isInitialZoom) {
+      isInitialZoom =
+          true; // Set the flag to true to prevent running the animation again
+
+      // Store the initial zoom level and adjust the target zoom level
+      double initialZoom = _animatedMapController.mapController.zoom;
+      double targetZoom =
+          initialZoom + 2.5; // Increase the targetZoom for more zoom-in effect
+
+      // Create a custom zoom tween to smoothly animate the zoom level
+      const animationDuration =
+          Duration(seconds: 3); // Adjust the duration to control the smoothness
+      // Increase the number of steps for a smoother animation
+      final animationController = AnimationController(
+        vsync: this,
+        duration: animationDuration,
+      );
+      final zoomTween = Tween<double>(begin: initialZoom, end: targetZoom);
+
+      // Start the animation and update the map controller's zoom level
+      animationController.forward();
+      animationController.addListener(() {
+        final currentZoom = zoomTween.evaluate(animationController);
+        _animatedMapController.mapController.move(curloca, currentZoom);
+      });
+    } else {
+      // If the initial zoom animation has already been performed, simply move the map to the current location without zooming
+      double currentZoom = _animatedMapController.mapController.zoom;
+
+      // Check if the current zoom level is less than 18, if so, zoom in to level 18
+      if (currentZoom < 18.0) {
+        _animatedMapController.mapController.move(curloca, 18.0);
+      } else {
+        // If the current zoom level is already greater than or equal to 18, just move to the new location without zooming
+        _animatedMapController.mapController.move(curloca, currentZoom);
+      }
+    }
+  }
+
+  IconButton buildNavigationMarker(BuildContext context, String speedText) {
     return IconButton(
       onPressed: () {},
       icon: const Icon(Icons.navigation),
@@ -2421,21 +2464,22 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               child: FloatingActionButton(
                 backgroundColor: Colors.cyan.shade500,
                 onPressed: show60KmDialog,
-                child: const Column(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    Icon(Icons.speed),
+                    // const Icon(Icons.speed),
                     Text(
-                      "60km/h",
-                      style: TextStyle(
+                      speedText,
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
+
             // NÚT BÊN DƯỚI MÀN HÌNH
             Positioned(
               // The position for the polyline button based on screen size
@@ -2456,6 +2500,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 tooltip: 'Polyline',
                 child: const Icon(
                   Icons.route,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 110,
+              right: isDesktop
+                  ? 200
+                  : isTablet
+                      ? 200
+                      : 90,
+              child: FloatingActionButton(
+                backgroundColor: isTracking ? Colors.red : Colors.grey,
+                onPressed:
+                    toggleLocationTracking, // Toggle tracking on button press
+                tooltip: isTracking ? 'Stop Tracking' : 'Start Tracking',
+                child: Icon(
+                  isTracking ? Icons.stop : Icons.play_arrow,
                   color: Colors.white,
                 ),
               ),

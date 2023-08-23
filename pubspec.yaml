@@ -47,6 +47,8 @@ dependencies:
   animated_radial_menu: ^0.0.1
   share_plus: ^7.1.0
   shared_preferences: ^2.2.0
+  google_fonts: ^5.1.0
+  location: ^5.0.3
 
 dev_dependencies:
   flutter_test:
