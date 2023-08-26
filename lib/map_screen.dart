@@ -2474,7 +2474,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                               Text(
                                 "80km/h",
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
