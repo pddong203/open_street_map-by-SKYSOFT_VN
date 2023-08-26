@@ -1391,15 +1391,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
 // XOAY ĐIỀU HƯỚNG TÂM XOAY QUANH ĐIỂM OFFSET
   void moveMapCenterToSavedLatLng() {
-    // Retrieve the saved latitude and longitude of the modified center
+    // Define the desired animation duration and total steps
+    const int animationDuration = 1500;
+    const int totalSteps = 60;
+
+    // Retrieve the saved latitude, longitude, and direction
     double savedLatitude =
         modifiedCenter.latitude; // Replace with actual saved latitude
     double savedLongitude =
         modifiedCenter.longitude; // Replace with actual saved longitude
+    double desiredRotation = finalDirection; // Use the saved final direction
 
-    const int animationDuration = 500;
-    const int totalSteps = 60;
-
+    // Calculate the offset increments for movement
     double latOffsetIncrement =
         (savedLatitude - _animatedMapController.mapController.center.latitude) /
             totalSteps;
@@ -1407,10 +1410,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             _animatedMapController.mapController.center.longitude) /
         totalSteps;
 
+    // Calculate the rotation increment
+    double rotationIncrement =
+        (desiredRotation - _animatedMapController.mapController.rotation) /
+            totalSteps;
+
     int stepCount = 0;
 
-    Timer.periodic(Duration(milliseconds: animationDuration ~/ totalSteps),
-        (timer) {
+    Timer.periodic(
+        const Duration(milliseconds: animationDuration ~/ totalSteps), (timer) {
       double newLatitude =
           _animatedMapController.mapController.center.latitude +
               latOffsetIncrement;
@@ -1425,20 +1433,32 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       _animatedMapController.mapController
           .move(LatLng(newLatitude, newLongitude), desiredZoom);
 
+      // Calculate the new rotation angle
+      double newRotation =
+          _animatedMapController.mapController.rotation + rotationIncrement;
+
+      // Rotate the map using the mapController.rotate() method.
+      _animatedMapController.mapController.rotate(newRotation);
+
       stepCount++;
 
       if (stepCount >= totalSteps) {
         // Move the map to the saved latitude and longitude with the desired zoom level.
         _animatedMapController.mapController
             .move(LatLng(savedLatitude, savedLongitude), desiredZoom);
+
+        // Rotate the map to the desired final rotation
+        _animatedMapController.mapController.rotate(desiredRotation);
+
         timer.cancel();
       }
     });
   }
 
   late LatLng modifiedCenter;
+
   void rotateMapAroundMarker() {
-    // Calculate the desired rotation angle by decrementing 10 degrees from the current rotation.
+    // Calculate the desired rotation angle by decrementing 25 degrees from the current rotation.
     double desiredRotation = _animatedMapController.mapController.rotation - 25;
 
     // Define the total duration of the animation in milliseconds.
@@ -1457,8 +1477,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
     // Initialize a step counter to keep track of animation progress.
     int stepCount = 0;
-
-    // Variable to store the modified center
 
     // Create a periodic timer to update the map rotation smoothly over time.
     Timer.periodic(Duration(milliseconds: stepDelay), (timer) {
@@ -1490,13 +1508,19 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       // Store the modified center after offset and rotation.
       modifiedCenter = _animatedMapController.mapController.center;
 
+      // Update the final direction after the animation.
+      finalDirection = newRotation; // Save the new rotation
+
       // Increment the step counter to keep track of the animation progress.
       stepCount++;
 
       // Check if the animation is complete by comparing the step count with total steps.
       if (stepCount >= totalSteps) {
-        // Now you have the modified center saved in 'modifiedCenter'.
-        // You can use this value as needed.
+        // Now you have the modified center saved in 'modifiedCenter' and the final direction saved in 'finalDirection'.
+        // You can use these values as needed.
+
+        // Log the final direction after the animation is completed.
+        developer.log("Final Direction: $finalDirection");
 
         // Cancel the timer when the animation is done to stop further updates.
         timer.cancel();
@@ -2132,11 +2156,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 zoom: 14,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
               ),
-              // nonRotatedChildren: [
-              //   Container(
-              //       alignment: Alignment.center,
-              //       child: const Icon(Icons.fiber_manual_record))
-              // ],
+              nonRotatedChildren: [
+                Container(
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.fiber_manual_record))
+              ],
               mapController: _animatedMapController.mapController,
               children: [
                 TileLayer(
