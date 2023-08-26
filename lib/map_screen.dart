@@ -1411,9 +1411,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         totalSteps;
 
     // Calculate the rotation increment
-    double rotationIncrement =
-        (desiredRotation - _animatedMapController.mapController.rotation) /
-            totalSteps;
+    double initialRotation = _animatedMapController.mapController.rotation;
+    double rotationDelta = (desiredRotation - initialRotation);
+    double rotationIncrement = rotationDelta / totalSteps;
 
     int stepCount = 0;
 
@@ -1434,8 +1434,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           .move(LatLng(newLatitude, newLongitude), desiredZoom);
 
       // Calculate the new rotation angle
-      double newRotation =
-          _animatedMapController.mapController.rotation + rotationIncrement;
+      double newRotation = initialRotation + stepCount * rotationIncrement;
 
       // Rotate the map using the mapController.rotate() method.
       _animatedMapController.mapController.rotate(newRotation);
