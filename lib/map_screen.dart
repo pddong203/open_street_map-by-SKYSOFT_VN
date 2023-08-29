@@ -1973,7 +1973,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 // Lấy ra vị trí hiện tại bằng GPS
   String speedText = "0 km/h";
   bool isTracking = false; // Track the current tracking state
-
+  Marker? navigationMarker;
   Timer? timer; // Store the timer instance for later cancellation
 
   void toggleLocationTracking() {
@@ -1990,7 +1990,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       if (kDebugMode) {
         print("Updating location and speed...");
       }
-      currentLoc(); // Call the current location update function
+      currentLoc1(); // Call the current location update function
     });
 
     isTracking = true; // Set tracking state to active
@@ -2002,6 +2002,73 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     isTracking = false;
   }
 
+  void currentLoc1() async {
+    Position data = await _determinePosition();
+    double speed = data.speed; // Speed in m/s
+
+    // Update the speed text with rounded value
+    int roundedSpeed =
+        (speed * 3.6).toInt(); // Round the speed to the nearest integer
+    speedText = "$roundedSpeed km/h";
+
+    setState(() {
+      curloca = LatLng(data.latitude, data.longitude);
+      updateMarkerAndZoom1(); // Update using the new function
+    });
+  }
+
+  void updateMarkerAndZoom1() {
+    double latOffsetIncrement = 0.0013;
+    const double scale = 1.25;
+    // Adjust the offset increment based on the device screen height for proper map centering.
+    double offsetIncrement;
+    if (MediaQuery.of(context).size.height < 896) {
+      offsetIncrement = 0.00002;
+    } else {
+      offsetIncrement = 0.00002 * scale;
+    }
+
+    // Calculate the new center based on the marker's position and offset
+    LatLng newCenter = LatLng(
+      curloca.latitude + latOffsetIncrement,
+      curloca.longitude + offsetIncrement,
+    );
+
+    // Remove the existing navigation marker if it exists
+    if (navigationMarker != null) {
+      markers.remove(navigationMarker);
+    }
+
+    // Create a new navigation marker
+    navigationMarker = Marker(
+      point: curloca,
+      width: 80,
+      height: 80,
+      builder: (ctx) =>
+          buildNavigationMarker(ctx, speedText), // Update the marker's builder
+    );
+
+    // Add the new navigation marker to the markers list
+    markers.add(navigationMarker!);
+
+    // Move the map to the new center with a zoom level of 18
+    _animatedMapController.mapController.move(newCenter, 18.0);
+
+    // Save the final center and direction after updating the marker and zooming
+    finalCenter = newCenter;
+    finalDirection = _animatedMapController.mapController.rotation;
+  }
+
+  IconButton buildNavigationMarker(BuildContext context, String speedText) {
+    return IconButton(
+      onPressed: () {},
+      icon: const Icon(Icons.compass_calibration),
+      color: Colors.greenAccent.shade700,
+      iconSize: 40,
+    );
+  }
+
+// TÌM VỊ TRÍ HIỆN TẠI CỦA NGƯỜI DÙNG QUA GPS
   void currentLoc() async {
     Position data = await _determinePosition();
     double speed = data.speed; // Speed in m/s
@@ -2016,9 +2083,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       updateMarkerAndZoom();
     });
   }
-// Declare a variable to hold the navigation marker
-
-  Marker? navigationMarker; // Use a nullable type for navigationMarker
 
   void updateMarkerAndZoom() {
     // Remove the existing navigation marker if it exists
@@ -2032,7 +2096,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       width: 80,
       height: 80,
       builder: (ctx) =>
-          buildNavigationMarker(ctx, speedText), // Update the marker's builder
+          buildNavigationMarker1(ctx, speedText), // Update the marker's builder
     );
 
     // Add the new navigation marker to the markers list
@@ -2077,12 +2141,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
   }
 
-  IconButton buildNavigationMarker(BuildContext context, String speedText) {
+  IconButton buildNavigationMarker1(BuildContext context, String speedText) {
     return IconButton(
       onPressed: () {},
-      icon: const Icon(Icons.compass_calibration),
+      icon: const Icon(Icons.fiber_manual_record),
       color: Colors.greenAccent.shade700,
-      iconSize: 40,
+      iconSize: 35,
     );
   }
 
@@ -2154,11 +2218,11 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 zoom: 14,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
               ),
-              nonRotatedChildren: [
-                Container(
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.fiber_manual_record))
-              ],
+              // nonRotatedChildren: [
+              //   Container(
+              //       alignment: Alignment.center,
+              //       child: const Icon(Icons.fiber_manual_record))
+              // ],
               mapController: _animatedMapController.mapController,
               children: [
                 TileLayer(
@@ -2572,7 +2636,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     toggleLocationTracking, // Toggle tracking on button press
                 tooltip: isTracking ? 'Stop Tracking' : 'Start Tracking',
                 child: Icon(
-                  isTracking ? Icons.stop : Icons.play_arrow,
+                  isTracking
+                      ? Icons.location_disabled
+                      : Icons.location_searching,
                   color: Colors.white,
                 ),
               ),
