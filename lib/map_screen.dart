@@ -2062,7 +2062,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   IconButton buildNavigationMarker(BuildContext context, String speedText) {
     return IconButton(
       onPressed: () {},
-      icon: const Icon(Icons.compass_calibration),
+      icon: const Icon(Icons.navigation),
       color: Colors.greenAccent.shade700,
       iconSize: 40,
     );
@@ -2144,7 +2144,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   IconButton buildNavigationMarker1(BuildContext context, String speedText) {
     return IconButton(
       onPressed: () {},
-      icon: const Icon(Icons.fiber_manual_record),
+      icon: const Icon(Icons.compass_calibration),
       color: Colors.greenAccent.shade700,
       iconSize: 35,
     );
