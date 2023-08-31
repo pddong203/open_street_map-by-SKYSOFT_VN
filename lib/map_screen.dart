@@ -2216,13 +2216,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               options: MapOptions(
                 onTap: (tapPosition, point) => handleMapTap(point),
                 zoom: 14,
+                maxZoom: 18,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
               ),
-              // nonRotatedChildren: [
-              //   Container(
-              //       alignment: Alignment.center,
-              //       child: const Icon(Icons.fiber_manual_record))
-              // ],
+              nonRotatedChildren: [
+                Container(
+                    alignment: Alignment.center, child: const Icon(Icons.add))
+              ],
               mapController: _animatedMapController.mapController,
               children: [
                 TileLayer(
