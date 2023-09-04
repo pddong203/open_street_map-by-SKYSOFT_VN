@@ -1,8 +1,9 @@
+// ignore: file_names
 import 'package:flutter/material.dart';
 
 class Sidebar extends StatelessWidget {
   final VoidCallback onClose;
-  const Sidebar({required this.onClose});
+  const Sidebar({super.key, required this.onClose});
 
   @override
   Widget build(BuildContext context) {

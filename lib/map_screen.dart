@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:animated_radial_menu/animated_radial_menu.dart';
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -536,6 +535,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     setState(() {}); // Trigger a rebuild of the widget
                   });
 
+                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
                   _openSearchModal(); // Open the search modal back
                 },
@@ -1678,216 +1678,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-  void offsetDownAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map up smoothly.
-    double offsetIncrement = 0.0015 / totalSteps;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrement = 0.00002;
-    } else {
-      offsetIncrement = 0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom out smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(
-        -offsetIncrement, 0.0, zoomIncrement, animationDuration, totalSteps);
-  }
-
-  void offsetRightAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map to the right smoothly.
-    double offsetIncrement = 0.0;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrement = 0.00002;
-    } else {
-      offsetIncrement = 0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(
-        0.0, offsetIncrement, zoomIncrement, animationDuration, totalSteps);
-  }
-
-  void offsetLeftAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map to the left smoothly.
-    double offsetIncrement = 0.0;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrement = -0.00002;
-    } else {
-      offsetIncrement = -0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(
-        0.0, offsetIncrement, zoomIncrement, animationDuration, totalSteps);
-  }
-
-  void offsetNorthEastAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map to the right smoothly.
-    double offsetIncrement = 0.0;
-
-    // Calculate the offset increment for each step to move the map down smoothly.
-    double latOffsetIncrement = 0.0015 / totalSteps;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrement = 0.00002;
-    } else {
-      offsetIncrement = 0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(latOffsetIncrement, offsetIncrement, zoomIncrement,
-        animationDuration, totalSteps);
-  }
-
-  void offsetNorthWestAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-
-    // Calculate the offset increment for each step to move the map to the northwest smoothly.
-    double offsetIncrementX = -0.0015 / totalSteps;
-    double offsetIncrementY = 0.0015 / totalSteps;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrementX = -0.00002;
-      offsetIncrementY = 0.00002;
-    }
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(offsetIncrementY, offsetIncrementX, zoomIncrement,
-        animationDuration, totalSteps);
-  }
-
-  void offsetSouthWestAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map to the left smoothly.
-    double offsetIncrement = 0.0;
-
-    // Calculate the offset increment for each step to move the map down smoothly.
-    double latOffsetIncrement = -0.0015 / totalSteps;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrement = -0.00002;
-    } else {
-      offsetIncrement = -0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(latOffsetIncrement, offsetIncrement, zoomIncrement,
-        animationDuration, totalSteps);
-  }
-
-  void offsetSouthEastAndZoomIn() {
-    // Define the total duration of the animation in milliseconds.
-    const int animationDuration = 500;
-
-    // Define the number of steps for the animation to achieve smooth movement and zooming.
-    const int totalSteps = 60;
-
-    // Define the scaling factor for offset increment to adjust animation smoothness.
-    const double scale = 1.25;
-
-    // Calculate the offset increment for each step to move the map to the southeast smoothly.
-    double offsetIncrementX = 0.0015 / totalSteps;
-    double offsetIncrementY = -0.0015 / totalSteps;
-
-    // Adjust the offset increment based on the device screen height for proper map centering.
-    if (MediaQuery.of(context).size.height < 896) {
-      offsetIncrementX = 0.00002;
-      offsetIncrementY = -0.00002;
-    } else {
-      offsetIncrementX = 0.00002 * scale;
-      offsetIncrementY = -0.00002 * scale;
-    }
-
-    // Calculate the zoom increment for each step to zoom in smoothly.
-    double zoomIncrement =
-        (18 - _animatedMapController.mapController.zoom) / totalSteps;
-
-    // Call the generic offsetMapAndZoom function with the specific offset values.
-    offsetMapAndZoom(offsetIncrementY, offsetIncrementX, zoomIncrement,
-        animationDuration, totalSteps);
-  }
-
   void offsetMapAndZoom(double latOffsetIncrement, double lngOffsetIncrement,
       double zoomIncrement, int animationDuration, int totalSteps) {
     // Initialize a step counter to keep track of animation progress.
@@ -2020,7 +1810,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   void updateMarkerAndZoom1() {
     double latOffsetIncrement = 0.0013;
     const double scale = 1.25;
-    // Adjust the offset increment based on the device screen height for proper map centering.
+
     double offsetIncrement;
     if (MediaQuery.of(context).size.height < 896) {
       offsetIncrement = 0.00002;
@@ -2217,6 +2007,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 onTap: (tapPosition, point) => handleMapTap(point),
                 zoom: 14,
                 maxZoom: 18,
+                minZoom: 3,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
               ),
               nonRotatedChildren: [
@@ -2265,59 +2056,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
               ],
             ),
-            // Positioned(
-            //   bottom: isDesktop
-            //       ? 150
-            //       : isTablet
-            //           ? 100
-            //           : 120,
-            //   right: 50,
-            //   left: 50,
-            //   child: RadialMenu(
-            //     children: [
-            //       RadialButton(
-            //         icon: const Icon(Icons.east),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetRightAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.south_east),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetSouthEastAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.south),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetDownAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.south_west),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetSouthWestAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.west),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetLeftAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.north_west),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetNorthWestAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.north),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetUpAndZoomIn,
-            //       ),
-            //       RadialButton(
-            //         icon: const Icon(Icons.north_east),
-            //         buttonColor: Colors.blueGrey,
-            //         onPress: offsetNorthEastAndZoomIn,
-            //       ),
-            //     ],
-            //   ),
-            // ),
+
             Positioned(
               top: 85,
               right: 5,
@@ -2469,28 +2208,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
             ),
             // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
-            // Positioned(
-            //   top: 85,
-            //   left: 250,
-            //   child: FloatingActionButton(
-            //     backgroundColor: Colors.blue,
-            //     onPressed: shareLocationFromButton,
-            //     child: const Column(
-            //       mainAxisAlignment: MainAxisAlignment.center,
-            //       children: <Widget>[
-            //         Icon(Icons.share),
-            //         Text(
-            //           "Share",
-            //           style: TextStyle(
-            //             fontSize: 12,
-            //             fontWeight: FontWeight.bold,
-            //           ),
-            //         )
-            //       ],
-            //     ),
-            //   ),
-            // ),
-
             Positioned(
               top: 23,
               left: 95,
