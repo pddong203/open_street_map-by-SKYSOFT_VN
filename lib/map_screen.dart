@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -68,6 +69,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   List<LatLng> savedMarkers = [];
   bool isShowingStack = true;
   bool isStackVisible = false;
+  bool isSavingHomeAddress = false;
+  bool isSavingWorkAddress = false;
+  String homeAddress = "Set once and go";
+  String workAddress = "Set once and go";
   //SEARCH BAR:
   final MapController mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
@@ -82,7 +87,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late LatLng finalCenter;
 
 // ============================= VOID LOGIC CỦA CÁC BUTTON =================================================
-// lấy ra vị trí tọa độ điểm cần tìm trên bản đồ
+
+// API lấy ra vị trí tọa độ điểm cần tìm trên bản đồ ( API THANH SEARCH)
   Future<void> repNameLocation(String value) async {
     try {
       String url =
@@ -124,17 +130,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
   }
 
-  void _removeMarkerFromList(LatLng marker) async {
-    if (savedMarkers.contains(marker)) {
-      setState(() {
-        savedMarkers.remove(marker);
-      });
-      await _saveMarkersToSharedPreferences(savedMarkers);
-    }
-  }
-
-// ham  showsaveMarker
-  void _showSaveMarkersList() async {
+// NÚT SAVE MARKER
+  void showSaveMarkersList() async {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -188,10 +185,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          _removeMarkerFromList(marker);
+                                          removeMarkerFromList(marker);
                                           Navigator.pop(dialogContext);
                                           Navigator.pop(context);
-                                          _showSaveMarkersList();
+                                          showSaveMarkersList();
                                         },
                                         child: const Text('Delete'),
                                       ),
@@ -203,7 +200,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                           ),
                           onTap: () {
                             // Ấn vào maker để hiển thị biểu tượng tương ứng trên bản đồ
-                            _showMarkerOnMap(marker);
+                            showMarkerOnMap(marker);
                             Navigator.of(context).pop();
                             Navigator.pop(context);
                           },
@@ -218,7 +215,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _saveMarkersToSharedPreferences(List<LatLng> markers) async {
+  // logic xóa marker đã save
+  void removeMarkerFromList(LatLng marker) async {
+    if (savedMarkers.contains(marker)) {
+      setState(() {
+        savedMarkers.remove(marker);
+      });
+      await saveMarkersToSharedPreferences(savedMarkers);
+    }
+  }
+
+  // logic lưu marker vào SharedPreferences
+  Future<void> saveMarkersToSharedPreferences(List<LatLng> markers) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> markerList = markers
         .map((LatLng marker) => "${marker.latitude},${marker.longitude}")
@@ -227,7 +235,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     await prefs.setStringList('savedMarkers', markerList);
   }
 
-  Future<void> _loadSavedMarkers() async {
+  // lưu data marker khi thoát ra khỏi app
+  Future<void> loadSavedMarkers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? markerStrings = prefs.getStringList('savedMarkers');
     if (markerStrings != null) {
@@ -243,7 +252,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
   }
 
-// đo tốc độ hiện thời
+// THÔNG BÁO TỐC ĐỘ HIỆN THỜI
   void show60KmDialog() {
     showDialog(
       context: context,
@@ -313,7 +322,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// cảnh báo tốc độ
+// CẢNH BÁO TỐC ĐỘ
   void show80KmDialog() {
     showDialog(
       context: context,
@@ -391,7 +400,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// cảnh báo nguy hiểm + hiệu ứng
+//  NÚT SOS + HIỆU ỨNG CẢNH BÁO
   void showDangerDialog() {
     // Show the SOS dialog
     showDialog(
@@ -484,15 +493,28 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// mở sidebar
+// HIỆU ỨNG NHẤP NHÁY CẢNH BÁO
+  void showStackRepeatedly() {
+    // Toggle the visibility of the stack
+    setState(() {
+      isShowingStack = !isShowingStack;
+    });
+
+    // Repeat the process after a short delay (e.g., 500 milliseconds)
+    Timer(const Duration(milliseconds: 900), () {
+      showStackRepeatedly();
+    });
+  }
+
+// MỞ SIDEBAR
   void toggleSidebar() {
     setState(() {
       _isSidebarOpen = !_isSidebarOpen;
     });
   }
 
-// thanh search mở fullscreen
-  void _showSearchFullScreen() {
+// THANH SLIDE BOTTOM BAR
+  void showSearchFullScreen() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -537,7 +559,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
                   // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
-                  _openSearchModal(); // Open the search modal back
+                  openSearchModal(); // Open the search modal back
                 },
               ),
 
@@ -606,7 +628,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                             print('Button $index pressed!');
                                           }
                                           if (index == 0) {
-                                            _showSaveMarkersList();
+                                            showSaveMarkersList();
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(
@@ -673,12 +695,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                        child: const ListTile(
-                          leading: Icon(
+                        child: ListTile(
+                          leading: const Icon(
                             Icons.home,
                             color: Colors.pink,
                           ),
-                          title: Text(
+                          title: const Text(
                             'Home',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -686,12 +708,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           subtitle: Text(
-                            'Set once and go',
-                            style: TextStyle(
+                            homeAddress,
+                            style: const TextStyle(
                               fontStyle: FontStyle.italic,
                               color: Colors.blue,
                             ),
                           ),
+                          onTap: () {
+                            handleHomeButton();
+                          },
                         ),
                       ),
                       Container(
@@ -703,12 +728,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                        child: const ListTile(
-                          leading: Icon(
+                        child: ListTile(
+                          leading: const Icon(
                             Icons.work,
                             color: Colors.brown,
                           ),
-                          title: Text(
+                          title: const Text(
                             'Work',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -716,12 +741,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           subtitle: Text(
-                            'Set once and go',
-                            style: TextStyle(
+                            workAddress,
+                            style: const TextStyle(
                               fontStyle: FontStyle.italic,
                               color: Colors.blue,
                             ),
                           ),
+                          onTap: () {
+                            handleWorkButton();
+                          },
                         ),
                       ),
                       Container(
@@ -782,7 +810,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                         15.0,
                                       );
                                       _focusNode.unfocus();
-                                      handleSearchTap(
+                                      showMarkerOnMap(
                                         LatLng(_options[index].lat,
                                             _options[index].lon),
                                       );
@@ -808,7 +836,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _openSearchModal() {
+  void openSearchModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -853,223 +881,231 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
                   // ignore: use_build_context_synchronously
                   Navigator.of(context).pop(); // Close the existing modal
-                  _openSearchModal(); // Open the search modal back
+                  openSearchModal(); // Open the search modal back
                 },
               ),
 
               Stack(
                 children: [
-                  Column(children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height *
-                                0.1, // Reduced the height to make the buttons smaller
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 14,
-                              itemBuilder: (context, index) {
-                                List<IconData> buttonIcons = [
-                                  Icons.bookmark,
-                                  Icons.local_parking,
-                                  Icons.ev_station,
-                                  Icons.local_gas_station,
-                                  Icons.fastfood,
-                                  Icons.local_cafe,
-                                  Icons.shopping_cart,
-                                  Icons.medication,
-                                  Icons.store,
-                                  Icons.local_hospital,
-                                  Icons.hotel,
-                                  Icons.park,
-                                  Icons.garage,
-                                  Icons.more_horiz,
-                                ];
+                  Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height *
+                                  0.1, // Reduced the height to make the buttons smaller
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: 14,
+                                itemBuilder: (context, index) {
+                                  List<IconData> buttonIcons = [
+                                    Icons.bookmark,
+                                    Icons.local_parking,
+                                    Icons.ev_station,
+                                    Icons.local_gas_station,
+                                    Icons.fastfood,
+                                    Icons.local_cafe,
+                                    Icons.shopping_cart,
+                                    Icons.medication,
+                                    Icons.store,
+                                    Icons.local_hospital,
+                                    Icons.hotel,
+                                    Icons.park,
+                                    Icons.garage,
+                                    Icons.more_horiz,
+                                  ];
 
-                                List<String> buttonTexts = [
-                                  'Saved',
-                                  'Parking',
-                                  'Electric',
-                                  'Gas',
-                                  'Food',
-                                  'Coffee',
-                                  'Shopping',
-                                  'Pharmacies',
-                                  'Grocery',
-                                  'Hospital ',
-                                  'Hotel',
-                                  'Parks',
-                                  'Garages',
-                                  'More',
-                                ];
+                                  List<String> buttonTexts = [
+                                    'Saved',
+                                    'Parking',
+                                    'Electric',
+                                    'Gas',
+                                    'Food',
+                                    'Coffee',
+                                    'Shopping',
+                                    'Pharmacies',
+                                    'Grocery',
+                                    'Hospital ',
+                                    'Hotel',
+                                    'Parks',
+                                    'Garages',
+                                    'More',
+                                  ];
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal:
-                                          4.0), // Reduced horizontal padding
-                                  child: SizedBox(
-                                    width:
-                                        70, // Reduced the width to make the buttons smaller
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        if (kDebugMode) {
-                                          print('Button $index pressed!');
-                                        }
-                                        if (index == 0) {
-                                          _showSaveMarkersList();
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        foregroundColor: Colors.black,
-                                        backgroundColor: Colors.white,
-                                        padding: const EdgeInsets.all(
-                                            6.0), // Reduced padding inside the button
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              12.0), // Slightly reduced the border radius
-                                          side: const BorderSide(
-                                            color: Colors.grey,
-                                            width:
-                                                0.2, // Set the border width to 1.0 pixel
-                                          ),
-                                        ),
-                                        elevation:
-                                            0.0, // Set the elevation to 0.0 to remove the shadow
-                                      ),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            buttonIcons[index],
-                                            size: 20.0, // Reduced icon size
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(
-                                              height:
-                                                  1.0), // Reduced gap between icon and text
-                                          Flexible(
-                                            child: Text(
-                                              buttonTexts[index],
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize:
-                                                    11.0, // Reduced text size
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines:
-                                                  1, // Ensures the text stays in one line
-                                              overflow: TextOverflow
-                                                  .ellipsis, // Truncate with ellipsis if overflowed
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal:
+                                            4.0), // Reduced horizontal padding
+                                    child: SizedBox(
+                                      width:
+                                          70, // Reduced the width to make the buttons smaller
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          if (kDebugMode) {
+                                            print('Button $index pressed!');
+                                          }
+                                          if (index == 0) {
+                                            showSaveMarkersList();
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          foregroundColor: Colors.black,
+                                          backgroundColor: Colors.white,
+                                          padding: const EdgeInsets.all(
+                                              6.0), // Reduced padding inside the button
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                12.0), // Slightly reduced the border radius
+                                            side: const BorderSide(
+                                              color: Colors.grey,
+                                              width:
+                                                  0.2, // Set the border width to 1.0 pixel
                                             ),
                                           ),
-                                        ],
+                                          elevation:
+                                              0.0, // Set the elevation to 0.0 to remove the shadow
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              buttonIcons[index],
+                                              size: 20.0, // Reduced icon size
+                                              color: Colors.grey,
+                                            ),
+                                            const SizedBox(
+                                                height:
+                                                    1.0), // Reduced gap between icon and text
+                                            Flexible(
+                                              child: Text(
+                                                buttonTexts[index],
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize:
+                                                      11.0, // Reduced text size
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                maxLines:
+                                                    1, // Ensures the text stays in one line
+                                                overflow: TextOverflow
+                                                    .ellipsis, // Truncate with ellipsis if overflowed
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Container 4 - Another Additional Container
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    // Container 4 - Another Additional Container
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
-                          ),
                         ),
-                      ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.home,
-                          color: Colors.pink,
-                        ),
-                        title: Text(
-                          'Home',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.home,
+                            color: Colors.pink,
                           ),
-                        ),
-                        subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
+                          title: const Text(
+                            'Home',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
+                          subtitle: Text(
+                            homeAddress,
+                            style: const TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          onTap: () {
+                            handleHomeButton();
+                          },
                         ),
                       ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
+                            ),
                           ),
+                        ),
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.work,
+                            color: Colors.brown,
+                          ),
+                          title: const Text(
+                            'Work',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            workAddress,
+                            style: const TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          onTap: () {
+                            handleWorkButton();
+                          },
                         ),
                       ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.work,
-                          color: Colors.brown,
-                        ),
-                        title: Text(
-                          'Work',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 1.0,
+                            ),
                           ),
                         ),
-                        subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
+                        child: const ListTile(
+                          leading: Icon(
+                            Icons.calendar_month,
+                            color: Colors.redAccent,
                           ),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey[300]!,
-                            width: 1.0,
+                          title: Text(
+                            'Connect calendar',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
                           ),
-                        ),
-                      ),
-                      child: const ListTile(
-                        leading: Icon(
-                          Icons.calendar_month,
-                          color: Colors.redAccent,
-                        ),
-                        title: Text(
-                          'Connect calendar',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Sync your calendar for route planning',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.blue,
+                          subtitle: Text(
+                            'Sync your calendar for route planning',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                   _options.isNotEmpty
                       ? SizedBox(
                           height: MediaQuery.of(context).size.height * 0.7,
@@ -1096,7 +1132,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                         15.0,
                                       );
                                       _focusNode.unfocus();
-                                      handleSearchTap(
+                                      showMarkerOnMap(
                                         LatLng(_options[index].lat,
                                             _options[index].lon),
                                       );
@@ -1112,7 +1148,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                         )
-                      : Container(),
+                      : Container()
                 ],
               ),
             ],
@@ -1120,6 +1156,571 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         );
       },
     );
+  }
+
+  void showSearchBar() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  const Text(
+                    'Search for a location:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter a location...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.grey[300],
+                    ),
+                    onChanged: (String value) async {
+                      await repNameLocation(value).then((value) {
+                        setState(() {}); // Update UI after search
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _options.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_options[index].displayname),
+                          onTap: () {
+                            if (isSavingHomeAddress) {
+                              String selectedAddress =
+                                  _options[index].displayname;
+                              double? latitude = _options[index].lat;
+                              double? longitude = _options[index].lon;
+                              showSaveHomeAddressDialog(
+                                  selectedAddress, latitude, longitude);
+                            } else if (isSavingWorkAddress) {
+                              String selectedAddress =
+                                  _options[index].displayname;
+                              double? latitude = _options[index].lat;
+                              double? longitude = _options[index].lon;
+                              showSaveWorkAddressDialog(
+                                  selectedAddress, latitude, longitude);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+// NÚT HOME Ở BOTTOM BAR
+
+  // logic nút home
+  void handleHomeButton() async {
+    setState(() {
+      isSavingHomeAddress = true;
+      isSavingWorkAddress = false;
+    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedHomeAddress = prefs.getString('home_address');
+
+    if (savedHomeAddress != null) {
+      // ignore: use_build_context_synchronously
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) {
+          return SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Home Address',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.pink.shade400, // Thay đổi màu sắc
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.grey, // Thay đổi màu sắc
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    savedHomeAddress,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          handleSavedHomeAddress(savedHomeAddress);
+                          Navigator.of(context).pop();
+                        },
+                        // ignore: sort_child_properties_last
+                        child: const Text(
+                          'Use This Address',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.pink.shade400, // Thay đổi màu sắc
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red, // Thay đổi màu sắc
+                        ),
+                        onPressed: () {
+                          showDeleteHomeConfirmationDialog(savedHomeAddress);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      showSearchBar();
+      _searchController.clear();
+      _options.clear();
+    }
+  }
+
+  // hiển thị popup
+  void showSaveHomeAddressDialog(
+      String address, double latitude, double longitude) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Save Home Address'),
+          content: const Text('Do you want to save this address as your home?'),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                saveHomeAddress(
+                    address, latitude, longitude); // Lưu địa chỉ và tọa độ
+                Navigator.of(context).pop(); // Đóng dialog
+                showHomeAddress();
+                _searchController.clear();
+                _options.clear();
+                handleHomeButton();
+              },
+              child: const Text('Yes'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Đóng dialog
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // thêm marker lên bản đồ
+  void handleSavedHomeAddress(String address) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    double latitude = prefs.getDouble('home_latitude') ?? 0.0;
+    double longitude = prefs.getDouble('home_longitude') ?? 0.0;
+
+    if (latitude != 0.0 && longitude != 0.0) {
+      LatLng homeLatLng = LatLng(latitude, longitude);
+      showMarkerOnMap(homeLatLng);
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop(); // Đóng bottom sheet
+    }
+  }
+
+  // hiển thị popup xóa địa chỉ home
+  void showDeleteHomeConfirmationDialog(String address) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  const Text(
+                    'Delete Home Address',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Are you sure you want to delete your home address?',
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      deleteHomeAddress();
+                      Navigator.of(context).pop();
+                      showHomeAddress();
+                      setState(() {});
+                      Navigator.of(context).pop(); // Đóng modal bottom sheet
+                      showSearchBar();
+                      _searchController.clear();
+                      _options.clear();
+                    },
+                    child: const Text('Yes'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // logic nút xóa nhà
+  void deleteHomeAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('home_address');
+    setState(() {
+      homeAddress = "Set once and go";
+    });
+  }
+
+  // Lưu địa điểm HOME vào SharedPreferences
+  void saveHomeAddress(
+      String address, double latitude, double longitude) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('home_address', address);
+    prefs.setDouble('home_latitude', latitude);
+    prefs.setDouble('home_longitude', longitude);
+  }
+
+  // Lấy vị trí HOME từ SharedPreferences
+  Future<String?> getHomeAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('home_address');
+  }
+
+  // Thay đổi tên địa điểm ở nút HOME
+  void showHomeAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedHomeAddress = prefs.getString('home_address');
+
+    // Kiểm tra nếu địa chỉ nhà đã lưu
+    if (savedHomeAddress != null) {
+      setState(() {
+        homeAddress = savedHomeAddress;
+      });
+    }
+  }
+
+//==========================================================================================//
+
+// NÚT WORK Ở BOTTOM BAR
+
+  // logic nút work
+  void handleWorkButton() async {
+    setState(() {
+      isSavingHomeAddress = false;
+      isSavingWorkAddress = true;
+    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedWorkAddress = prefs.getString('work_address');
+    if (savedWorkAddress != null) {
+      // ignore: use_build_context_synchronously
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) {
+          return SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Work Address',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.brown.shade400, // Thay đổi màu sắc
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.grey, // Thay đổi màu sắc
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    savedWorkAddress,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          handleSavedWorkAddress(savedWorkAddress);
+                          Navigator.of(context).pop();
+                        },
+                        // ignore: sort_child_properties_last
+                        child: const Text(
+                          'Use This Address',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.brown.shade400, // Thay đổi màu sắc
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red, // Thay đổi màu sắc
+                        ),
+                        onPressed: () {
+                          showDeleteWorkConfirmationDialog(savedWorkAddress);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      showSearchBar();
+      _searchController.clear();
+      _options.clear();
+    }
+  }
+
+  // hiển thị popup
+  void showSaveWorkAddressDialog(
+      String address, double latitude, double longitude) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Save Work Address'),
+          content: const Text('Do you want to save this address as your work?'),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                saveWorkAddress(
+                    address, latitude, longitude); // Save the address
+                Navigator.of(context).pop(); // Close the dialog
+                showWorkAddress();
+                _searchController.clear();
+                _options.clear();
+                handleWorkButton(); // Handle work address button action
+              },
+              child: const Text('Yes'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('No'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // thêm marker lên bản đồ
+  void handleSavedWorkAddress(String address) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    double latitude = prefs.getDouble('work_latitude') ?? 0.0;
+    double longitude = prefs.getDouble('work_longitude') ?? 0.0;
+    if (latitude != 0.0 && longitude != 0.0) {
+      LatLng workLatLng = LatLng(latitude, longitude);
+      showMarkerOnMap(workLatLng);
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop(); // Đóng bottom sheet
+    }
+  }
+
+  // hiển thị popup xóa địa chỉ work
+  void showDeleteWorkConfirmationDialog(String address) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        // Đóng modal bottom sheet
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  const Text(
+                    'Delete Work Address',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Are you sure you want to delete your work address?',
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Thực hiện xóa địa chỉ công việc
+                      deleteWorkAddress();
+                      Navigator.of(context).pop();
+                      setState(() {});
+                      // Đóng modal bottom sheet
+                      Navigator.of(context).pop();
+                      showSearchBar();
+                      _searchController.clear();
+                      _options.clear();
+                    },
+                    child: const Text('Yes'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // logic nút xóa work
+  void deleteWorkAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('work_address');
+    setState(() {
+      workAddress = "Set once and go";
+    });
+  }
+
+  // Lưu địa điểm WORK vào SharedPreferences
+  void saveWorkAddress(
+      String address, double latitude, double longitude) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('work_address', address);
+    prefs.setDouble('work_latitude', latitude);
+    prefs.setDouble('work_longitude', longitude);
+  }
+
+  // Lấy vị trí WORK từ SharedPreferences
+  Future<String?> getWorkAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('work_address');
+  }
+
+  // Thay đổi tên địa điểm ở nút WORK
+  void showWorkAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedWorkAddress = prefs.getString('work_address');
+
+    // Kiểm tra nếu địa chỉ công việc đã lưu
+    if (savedWorkAddress != null) {
+      setState(() {
+        workAddress = savedWorkAddress;
+      });
+    }
   }
 
   // NỐI 2 ĐIỂM !
@@ -1138,11 +1739,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-// thêm marker có sẵn lên bản đồ
+// setup data khi khởi động app (thoát app hoặc tắt đa nhiệm vẫn lưu dữ liệu trừ khi gỡ bỏ)
   @override
   void initState() {
     super.initState();
-    _loadSavedMarkers();
+    showHomeAddress();
+    showWorkAddress();
+    loadSavedMarkers();
     markers.addAll([
       Marker(
         point: const LatLng(21.03276589493197, 105.83989509524008),
@@ -1157,27 +1760,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       ),
     ]);
     showStackRepeatedly();
-    _loadSavedMarkers();
   }
 
-// Hiệu ứng cảnh báo nhấp nháy
-  void showStackRepeatedly() {
-    // Toggle the visibility of the stack
-    setState(() {
-      isShowingStack = !isShowingStack;
-    });
-
-    // Repeat the process after a short delay (e.g., 500 milliseconds)
-    Timer(const Duration(milliseconds: 900), () {
-      showStackRepeatedly();
-    });
-  }
-
-// add marker trên bản đồ khi search
-  void handleSearchTap(LatLng location) {
+// THÊM MARKER LÊN BẢN ĐỒ BẰNG SEARCH BAR
+  void showMarkerOnMap(LatLng location) {
+    _animatedMapController.centerOnPoint(location);
     setState(() {
       tappedMarkers.add(
-        // Add the tapped marker to the tappedMarkers list
         Marker(
           point: location,
           width: 100,
@@ -1186,37 +1775,14 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             icon: const Icon(Icons.location_on),
             color: Colors.red,
             iconSize: 45,
-            onPressed: () => handleMarkerTap(
-                location), // Call the handleMarkerTap method when the marker is tapped
+            onPressed: () => handleMarkerTap(location),
           ),
         ),
       );
     });
   }
 
-//click hiện lên bản đồ
-  void _showMarkerOnMap(LatLng marker) {
-    // Di chuyển bản đồ đến vị trí của marker
-    _animatedMapController.centerOnPoint(marker);
-
-    setState(() {
-      tappedMarkers.add(
-        Marker(
-          point: marker,
-          width: 100,
-          height: 100,
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.location_on),
-            color: Colors.red,
-            iconSize: 45,
-            onPressed: () => handleMarkerTap(marker),
-          ),
-        ),
-      );
-    });
-  }
-
-// add marker location trên bản đồ khi OnTap
+// THÊM MARKER LÊN BẢN ĐỒ BẰNG TAY ONTAP
   void handleMapTap(LatLng tappedPoint) {
     setState(() {
       tappedMarkers.add(
@@ -1242,7 +1808,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-// xem thông tin của marker đó
+// XEM THÔNG TIN CỦA MARKER ĐÓ ( POPUP HIỆN SAVE MARKER + DELETE MARKER + CLOSE)
   void handleMarkerTap(LatLng tappedPoint) {
     // Show the information about the marker (latitude and longitude)
     showDialog(
@@ -1277,7 +1843,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   // Lưu lại vị trí của marker vào danh sách lưu trữ
                   savedMarkers.add(tappedPoint);
                 });
-                await _saveMarkersToSharedPreferences(savedMarkers);
+                await saveMarkersToSharedPreferences(savedMarkers);
                 // ignore: use_build_context_synchronously
                 Navigator.of(context).pop(); // Đóng hộp thoại
                 // ignore: use_build_context_synchronously
@@ -1325,7 +1891,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// Center marker lấy chính giữa marker
+// LẤY CENTER MAP LÀ MARKER
   int tapCount = 0;
   void centerMarkers() {
     // Increment the tap count on each tap
@@ -1351,7 +1917,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     }
   }
 
-// Rotate cả bản đồ 90 trái
+// ROTATE CẢ BẢN ĐỒ THEO TÂM 90 ĐỘ TRÁI
   void rotateMapLeft() {
     _animatedMapController.animatedRotateFrom(
       90,
@@ -1359,7 +1925,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// Rotate cả bản đồ 90 phải
+// ROTATE CẢ BẢN ĐỒ THEO TÂM 90 ĐỘ PHẢI
   void rotateMapRight() {
     _animatedMapController.animatedRotateFrom(
       -90,
@@ -1367,21 +1933,21 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-// Zoom in thu nhỏ bản đồ
-  void zoomOut() {
+// ZOOM IN PHÓNG TO BẢN ĐỒ
+  void zoomIn() {
     _animatedMapController.animatedZoomIn(
       customId: _useTransformer ? _useTransformerId : null,
     );
   }
 
-// Zoom out thu nhỏ bản đồ
-  void zoomIn() {
+// ZOOM OUT THU NHỎ BẢN ĐỒ
+  void zoomOut() {
     _animatedMapController.animatedZoomOut(
       customId: _useTransformer ? _useTransformerId : null,
     );
   }
 
-// Xóa tất cả marker location tồn tại trên bản đồ
+// XÓA TẤT CẢ MARKER ONTAP HOẶC SEARCH TRÊN BẢN ĐỒ ( VỊ TRÍ HIỆN TẠI SẼ K XÓA)
   void clearAllMarkers() {
     setState(() {
       tappedMarkers.clear();
@@ -1719,7 +2285,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
 // CHỨC NĂNG ĐANG ĐỂ TRỐNG ĐỀ CHỜ!
   void handleButtonPress() {}
-// KHAI BÁO BIẾN CHO VOID BÊN DƯỚI
+
+// KIỂM TRA QUYỀN TRUY CẬP ĐỊNH VỊ GPS
   double? lat;
   double? long;
   String address = "";
@@ -1760,7 +2327,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
         desiredAccuracy: LocationAccuracy.best);
   }
 
-// Lấy ra vị trí hiện tại bằng GPS
+// TRACKING VỊ TRÍ HIỆN TẠI KHI DI CHUYỂN
   String speedText = "0 km/h";
   bool isTracking = false; // Track the current tracking state
   Marker? navigationMarker;
@@ -1874,23 +2441,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
+  bool isCurrentLocationLayerActive =
+      false; // Flag to control the visibility of the CurrentLocationLayer
+  bool areAdditionalMarkersVisible =
+      false; // Flag to control the visibility of additional markers
+
   void updateMarkerAndZoom() {
     // Remove the existing navigation marker if it exists
     if (navigationMarker != null) {
       markers.remove(navigationMarker);
     }
 
-    // Create a new navigation marker
-    navigationMarker = Marker(
-      point: curloca,
-      width: 80,
-      height: 80,
-      builder: (ctx) =>
-          buildNavigationMarker1(ctx, speedText), // Update the marker's builder
-    );
-
-    // Add the new navigation marker to the markers list
-    markers.add(navigationMarker!); // Use the non-null assertion operator (!)
+    // Update the marker and zoom level as before
 
     if (!isInitialZoom) {
       isInitialZoom =
@@ -1904,40 +2466,38 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       // Create a custom zoom tween to smoothly animate the zoom level
       const animationDuration =
           Duration(seconds: 3); // Adjust the duration to control the smoothness
-      // Increase the number of steps for a smoother animation
+
+      // Create an AnimationController
       final animationController = AnimationController(
         vsync: this,
         duration: animationDuration,
       );
+
+      // Create a zoom Tween
       final zoomTween = Tween<double>(begin: initialZoom, end: targetZoom);
 
-      // Start the animation and update the map controller's zoom level
+      // Start the animation
       animationController.forward();
+
+      // Add a listener to update the map's zoom level during the animation
       animationController.addListener(() {
         final currentZoom = zoomTween.evaluate(animationController);
         _animatedMapController.mapController.move(curloca, currentZoom);
       });
     } else {
-      // If the initial zoom animation has already been performed, simply move the map to the current location without zooming
       double currentZoom = _animatedMapController.mapController.zoom;
 
-      // Check if the current zoom level is less than 18, if so, zoom in to level 18
       if (currentZoom < 18.0) {
         _animatedMapController.mapController.move(curloca, 18.0);
       } else {
-        // If the current zoom level is already greater than or equal to 18, just move to the new location without zooming
         _animatedMapController.mapController.move(curloca, currentZoom);
       }
     }
-  }
 
-  IconButton buildNavigationMarker1(BuildContext context, String speedText) {
-    return IconButton(
-      onPressed: () {},
-      icon: const Icon(Icons.compass_calibration),
-      color: Colors.greenAccent.shade700,
-      iconSize: 35,
-    );
+    // Set the flags to activate the layers
+    isCurrentLocationLayerActive = true;
+    areAdditionalMarkersVisible = true;
+    // At this point, the layers should be added to the map automatically
   }
 
 // ================WIDGET HIỆN TRÊN MÀN HÌNH CỦA APP ==================================================================================================================================================================================================================
@@ -2012,7 +2572,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
               nonRotatedChildren: [
                 Container(
-                    alignment: Alignment.center, child: const Icon(Icons.add))
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.add),
+                ),
               ],
               mapController: _animatedMapController.mapController,
               children: [
@@ -2026,6 +2588,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   rotate: true,
                   markers: [...markers, ...tappedMarkers],
                 ),
+                if (isCurrentLocationLayerActive) CurrentLocationLayer(),
+                if (areAdditionalMarkersVisible)
+                  MarkerLayer(
+                    markers: [...markers, ...tappedMarkers],
+                  ),
+                // Add the CurrentLocationLayer and additional markers conditionally
               ],
             ),
 
@@ -2162,7 +2730,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: zoomIn,
+                        onPressed: zoomOut,
                         tooltip: 'Zoom Out',
                         child:
                             const Icon(Icons.zoom_in_map, color: Colors.white),
@@ -2174,7 +2742,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       height: 40,
                       child: FloatingActionButton(
                         backgroundColor: Colors.blueGrey,
-                        onPressed: zoomOut,
+                        onPressed: zoomIn,
                         tooltip: 'Zoom In',
                         child:
                             const Icon(Icons.zoom_out_map, color: Colors.white),
@@ -2389,7 +2957,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
-  // THANH BOTTOM BAR BÊN TRONG CHỨA NHỮNG GÌ
+  // THANH BOTTOM BAR SLIDE-UP
   Widget _scrollingList(ScrollController sc) {
     return Stack(
       children: [
@@ -2414,7 +2982,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                         horizontal: 10.0, vertical: 0.1),
                     child: GestureDetector(
                       onTap: () {
-                        _showSearchFullScreen(); // Call the function to show the fullscreen container
+                        showSearchFullScreen(); // Call the function to show the fullscreen container
                       },
                       child: Container(
                         // Add your custom decoration here
@@ -2446,7 +3014,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
                   GestureDetector(
                     onTap: () {
-                      _showSearchFullScreen(); // Call the function to show the fullscreen container
+                      showSearchFullScreen(); // Call the function to show the fullscreen container
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -2481,7 +3049,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
                   GestureDetector(
                     onTap: () {
-                      _showSearchFullScreen(); // Call the function to show the fullscreen container
+                      showSearchFullScreen(); // Call the function to show the fullscreen container
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -2516,7 +3084,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
                   GestureDetector(
                     onTap: () {
-                      _showSearchFullScreen(); // Call the function to show the fullscreen container
+                      showSearchFullScreen(); // Call the function to show the fullscreen container
                     },
                     child: Container(
                       decoration: BoxDecoration(
