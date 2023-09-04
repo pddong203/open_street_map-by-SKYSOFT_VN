@@ -1469,7 +1469,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     return prefs.getString('home_address');
   }
 
-  // Thay đổi tên địa điểm ở nút HOME
+  // Thay đổi tên địa điểm ở nút HOME + Lưu khi thoát app
   void showHomeAddress() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedHomeAddress = prefs.getString('home_address');
@@ -1710,7 +1710,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     return prefs.getString('work_address');
   }
 
-  // Thay đổi tên địa điểm ở nút WORK
+  // Thay đổi tên địa điểm ở nút WORK + Lưu khi thoát app
   void showWorkAddress() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedWorkAddress = prefs.getString('work_address');
@@ -2570,6 +2570,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 minZoom: 3,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
               ),
+              // tâm của bản đồ
               nonRotatedChildren: [
                 Container(
                   alignment: Alignment.center,
@@ -3025,12 +3026,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
-                      child: const ListTile(
-                        leading: Icon(
+                      child: ListTile(
+                        leading: const Icon(
                           Icons.home,
                           color: Colors.pink,
                         ),
-                        title: Text(
+                        title: const Text(
                           'Home',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -3038,12 +3039,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
+                          homeAddress,
+                          style: const TextStyle(
                             fontStyle: FontStyle.italic,
                             color: Colors.blue,
                           ),
                         ),
+                        onTap: () {
+                          handleHomeButton();
+                        },
                       ),
                     ),
                   ),
@@ -3060,12 +3064,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
-                      child: const ListTile(
-                        leading: Icon(
+                      child: ListTile(
+                        leading: const Icon(
                           Icons.work,
                           color: Colors.brown,
                         ),
-                        title: Text(
+                        title: const Text(
                           'Work',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -3073,12 +3077,15 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         subtitle: Text(
-                          'Set once and go',
-                          style: TextStyle(
+                          workAddress,
+                          style: const TextStyle(
                             fontStyle: FontStyle.italic,
                             color: Colors.blue,
                           ),
                         ),
+                        onTap: () {
+                          handleWorkButton();
+                        },
                       ),
                     ),
                   ),
