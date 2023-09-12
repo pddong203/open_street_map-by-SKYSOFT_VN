@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:skysoft/map_screen.dart';
 
+import 'navigation_example.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -12,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
+        title: 'Skysoft Map',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),

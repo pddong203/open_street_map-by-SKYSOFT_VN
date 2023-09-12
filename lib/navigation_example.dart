@@ -74,14 +74,12 @@ class _NavigationExampleState extends State<NavigationExample> {
             followOnLocationUpdate: _followOnLocationUpdate,
             turnOnHeadingUpdate: _turnOnHeadingUpdate,
             style: const LocationMarkerStyle(
-              marker: DefaultLocationMarker(
-                child: Icon(
-                  Icons.navigation,
-                  color: Colors.white,
-                ),
+              marker: Icon(
+                Icons.navigation,
+                color: Colors.green,
               ),
               markerSize: Size(40, 40),
-              markerDirection: MarkerDirection.heading,
+              // markerDirection: MarkerDirection.heading,
             ),
           ),
         ],
@@ -90,7 +88,7 @@ class _NavigationExampleState extends State<NavigationExample> {
             right: 20,
             bottom: 20,
             child: FloatingActionButton(
-              backgroundColor: _navigationMode ? Colors.blue : Colors.grey,
+              backgroundColor: _navigationMode ? Colors.grey : Colors.red,
               foregroundColor: Colors.white,
               onPressed: () {
                 setState(

@@ -73,6 +73,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   bool isSavingWorkAddress = false;
   String homeAddress = "Set once and go";
   String workAddress = "Set once and go";
+  // marker tracking
+  late bool _navigationMode;
+  late int _pointerCount;
+  late FollowOnLocationUpdate _followOnLocationUpdate;
+  late TurnOnHeadingUpdate _turnOnHeadingUpdate;
+  late StreamController<double?> _followCurrentLocationStreamController;
+  late StreamController<void> _turnHeadingUpStreamController;
   //SEARCH BAR:
   final MapController mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
@@ -562,7 +569,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   showSearchFullScreen(); // Close the existing modal
                 },
               ),
-
               Stack(
                 children: [
                   Column(
@@ -715,6 +721,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           onTap: () {
+                            Navigator.of(context).pop();
                             handleHomeButton();
                           },
                         ),
@@ -748,6 +755,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           onTap: () {
+                            Navigator.of(context).pop();
                             handleWorkButton();
                           },
                         ),
@@ -878,7 +886,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                       fillColor: Colors.grey[300],
                     ),
                     onChanged: (String value) async {
-                      await repNameLocation(value).then((value) {
+                      repNameLocation(value).then((value) {
                         setState(() {}); // Update UI after search
                       });
                     },
@@ -918,6 +926,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           },
         );
         // ignore: dead_code
+        Navigator.of(context).pop();
         showSearchFullScreen();
       },
     );
@@ -1510,10 +1519,45 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           onPressed: () {},
           icon: const Icon(Icons.flag),
           color: Colors.redAccent,
-          iconSize: 45,
+          iconSize: 30,
         ),
       ),
     ]);
+    // MARKER NAVIAGETION
+    _navigationMode = false;
+    _pointerCount = 0;
+    _followOnLocationUpdate = FollowOnLocationUpdate.never;
+    _turnOnHeadingUpdate = TurnOnHeadingUpdate.never;
+    _followCurrentLocationStreamController = StreamController<double?>();
+    _turnHeadingUpStreamController = StreamController<void>();
+  }
+
+  @override
+  void dispose() {
+    _followCurrentLocationStreamController.close();
+    _turnHeadingUpStreamController.close();
+    super.dispose();
+  }
+
+  // Disable follow and turn temporarily when user is manipulating the map.
+  void _onPointerDown(e, l) {
+    _pointerCount++;
+    setState(() {
+      _followOnLocationUpdate = FollowOnLocationUpdate.never;
+      _turnOnHeadingUpdate = TurnOnHeadingUpdate.never;
+    });
+  }
+
+  // Enable follow and turn again when user end manipulation.
+  void _onPointerUp(e, l) {
+    if (--_pointerCount == 0 && _navigationMode) {
+      setState(() {
+        _followOnLocationUpdate = FollowOnLocationUpdate.always;
+        _turnOnHeadingUpdate = TurnOnHeadingUpdate.always;
+      });
+      _followCurrentLocationStreamController.add(18);
+      _turnHeadingUpStreamController.add(null);
+    }
   }
 
 // THÊM MARKER LÊN BẢN ĐỒ BẰNG SEARCH BAR
@@ -1527,7 +1571,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           builder: (context) => IconButton(
             icon: const Icon(Icons.location_on),
             color: Colors.red,
-            iconSize: 45,
+            iconSize: 30,
             onPressed: () => handleMarkerTap(location),
           ),
         ),
@@ -1548,7 +1592,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           builder: (context) => IconButton(
             icon: const Icon(Icons.location_on),
             color: Colors.blue,
-            iconSize: 45,
+            iconSize: 30,
             onPressed: () => handleMarkerTap(tappedPoint),
           ),
         ),
@@ -2307,7 +2351,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
       // THANH BOTTOM BAR BUTTON BÊN TRONG CUỐI CÙNG
       body: SlidingUpPanel(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(25.0)),
-        panelBuilder: (ScrollController sc) => _scrollingList(sc),
+        panelBuilder: (ScrollController sc) => scrollingList(sc),
         // BẢN ĐỒ VÀ CÁC NÚT
         body: Stack(
           children: [
@@ -2318,8 +2362,10 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 maxZoom: 18,
                 minZoom: 3,
                 center: const LatLng(21.03283599324495, 105.8398736375679),
+                onPointerDown: _onPointerDown,
+                onPointerUp: _onPointerUp,
+                onPointerCancel: _onPointerUp,
               ),
-              // tâm của bản đồ
               nonRotatedChildren: [
                 Container(
                   alignment: Alignment.center,
@@ -2333,19 +2379,43 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   userAgentPackageName: 'dev.fleaflet.flutter_map.example',
                 ),
 
-                // ĐIỂM ĐÁNH DẤU MARKER
                 MarkerLayer(
                   rotate: true,
                   markers: [...markers, ...tappedMarkers],
                 ),
+
+                // Conditionally render CurrentLocationLayer and additional markers
+                if (isCurrentLocationLayerActive)
+                  Visibility(
+                    visible:
+                        !_navigationMode, // Hide if _navigationMode is true
+                    child: CurrentLocationLayer(),
+                  ),
+                if (isCurrentLocationLayerActive && _navigationMode)
+                  CurrentLocationLayer(
+                    followScreenPoint: const CustomPoint(0.0, 0.65),
+                    followScreenPointOffset: const CustomPoint(0.0, -50.0),
+                    // followCurrentLocationStream:
+                    //     _followCurrentLocationStreamController.stream,
+                    // turnHeadingUpLocationStream:
+                    //     _turnHeadingUpStreamController.stream,
+                    followOnLocationUpdate: _followOnLocationUpdate,
+                    turnOnHeadingUpdate: _turnOnHeadingUpdate,
+                    style: const LocationMarkerStyle(
+                      marker: Icon(
+                        Icons.navigation,
+                        color: Colors.green,
+                      ),
+                      markerSize: Size(25, 25),
+                      markerDirection: MarkerDirection.heading,
+                    ),
+                  ),
 
                 if (areAdditionalMarkersVisible)
                   MarkerLayer(
                     rotate: true,
                     markers: [...markers, ...tappedMarkers],
                   ),
-                if (isCurrentLocationLayerActive) CurrentLocationLayer(),
-                // Add the CurrentLocationLayer and additional markers conditionally
               ],
             ),
 
@@ -2529,6 +2599,40 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
             ),
             // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
             Positioned(
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 110,
+              right: isDesktop
+                  ? 100
+                  : isTablet
+                      ? 80
+                      : 90,
+              child: FloatingActionButton(
+                backgroundColor: _navigationMode ? Colors.red : Colors.grey,
+                foregroundColor: Colors.white,
+                onPressed: () {
+                  setState(() {
+                    _navigationMode = !_navigationMode;
+                    _followOnLocationUpdate = _navigationMode
+                        ? FollowOnLocationUpdate.always
+                        : FollowOnLocationUpdate.never;
+                    _turnOnHeadingUpdate = _navigationMode
+                        ? TurnOnHeadingUpdate.always
+                        : TurnOnHeadingUpdate.never;
+                  });
+                  if (_navigationMode) {
+                    _followCurrentLocationStreamController.add(18);
+                    _turnHeadingUpStreamController.add(null);
+                  }
+                },
+                child: const Icon(
+                  Icons.assistant_direction,
+                ),
+              ),
+            ),
+            Positioned(
               top: 23,
               left: 95,
               child: AvatarGlow(
@@ -2656,30 +2760,30 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            Positioned(
-              bottom: isDesktop
-                  ? 110
-                  : isTablet
-                      ? 110
-                      : 110,
-              right: isDesktop
-                  ? 200
-                  : isTablet
-                      ? 200
-                      : 90,
-              child: FloatingActionButton(
-                backgroundColor: isTracking ? Colors.red : Colors.grey,
-                onPressed:
-                    toggleLocationTracking, // Toggle tracking on button press
-                tooltip: isTracking ? 'Stop Tracking' : 'Start Tracking',
-                child: Icon(
-                  isTracking
-                      ? Icons.location_disabled
-                      : Icons.location_searching,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            // Positioned(
+            //   bottom: isDesktop
+            //       ? 110
+            //       : isTablet
+            //           ? 110
+            //           : 110,
+            //   right: isDesktop
+            //       ? 200
+            //       : isTablet
+            //           ? 200
+            //           : 90,
+            //   child: FloatingActionButton(
+            //     backgroundColor: isTracking ? Colors.red : Colors.grey,
+            //     onPressed:
+            //         toggleLocationTracking, // Toggle tracking on button press
+            //     tooltip: isTracking ? 'Stop Tracking' : 'Start Tracking',
+            //     child: Icon(
+            //       isTracking
+            //           ? Icons.location_disabled
+            //           : Icons.location_searching,
+            //       color: Colors.white,
+            //     ),
+            //   ),
+            // ),
             Positioned(
               // The position for the current location button based on screen size
               bottom: isDesktop
@@ -2710,7 +2814,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   // THANH BOTTOM BAR SLIDE-UP
-  Widget _scrollingList(ScrollController sc) {
+  Widget scrollingList(ScrollController sc) {
     return Stack(
       children: [
         Positioned(
