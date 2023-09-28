@@ -188,10 +188,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_android
-      sha256: "835ff5b4888a2f8eba128996494faf9c5d422785322a81dc0565b99e0f6c379d"
+      sha256: db75aacf93fcdc2c0ba20066019da30e3fde7b102cf579d4bd4ea542e8a8cf17
       url: "https://pub.dev"
     source: hosted
-    version: "4.2.2"
+    version: "4.2.4"
   geolocator_apple:
     dependency: transitive
     description:
@@ -204,10 +204,10 @@ packages:
     dependency: transitive
     description:
       name: geolocator_platform_interface
-      sha256: af4d69231452f9620718588f41acc4cb58312368716bfff2e92e770b46ce6386
+      sha256: b2a0c09d2cfe8ad6a8cc44fada5c1092c49286e8c30922914dfe2b23799a682f
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.7"
+    version: "4.0.8"
   geolocator_web:
     dependency: transitive
     description:
@@ -593,10 +593,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "9e82a402b7f3d518fb9c02d0e9ae45952df31b9bf34d77baf19da2de03fc2aaa"
+      sha256: c97defd418eef4ec88c0d1652cdce84b9f7b63dd7198e266d06ac1710d527067
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.7"
+    version: "5.0.8"
   wkt_parser:
     dependency: transitive
     description:
