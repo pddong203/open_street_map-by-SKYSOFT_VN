@@ -319,7 +319,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
     _drawUnitOfMeasurementText(canvas, size);
 
     //Draw Speed Text
-    _drawSpeedText(canvas, size);
+    // _drawSpeedText(canvas, size);
   }
 
   @override
