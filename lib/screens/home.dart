@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:skysoft/models/map_screen.dart';
+import 'package:skysoft/screens/map_skysoft.dart';
+
+import '../models/navigation_example.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -11,6 +13,6 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
-    return const MapScreen();
+    return const MapSkysoft();
   }
 }

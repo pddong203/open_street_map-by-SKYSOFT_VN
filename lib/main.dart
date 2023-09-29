@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:skysoft/models/map_screen.dart';
 import 'package:skysoft/screens/home.dart';
 
 void main() {

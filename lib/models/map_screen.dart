@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -13,19 +12,15 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skysoft/global/field.dart';
 import 'package:skysoft/models/info_location.dart';
-import 'package:skysoft/models/kdgaueModel.dart';
 import 'package:skysoft/models/tilt.dart';
 import 'package:skysoft/screens/app_bar.dart';
 import 'package:skysoft/screens/side_bar.dart';
 import 'package:http/http.dart' as http;
 import 'package:skysoft/utils/save_marker_list_logic.dart';
+import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/kdgaugeview.dart';
 import 'package:skysoft/widgets/save_marker_list_popup.dart';
-import 'package:skysoft/widgets/sos_warning_dialog.dart';
-import 'package:skysoft/widgets/warning_dialog.dart';
-
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 // ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
@@ -77,17 +72,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   late LatLng finalCenter;
   double tilt = 0.0;
 
-  KdgaueModel kdgaueModel = KdgaueModel(currentSpeed: 10.0);
-
 // ================WIDGET HIỆN TRÊN MÀN HÌNH CỦA APP ==================================================================================================================================================================================================================//
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isDesktop = screenSize.width > 1024;
     final isTablet = screenSize.width <= 1024 && screenSize.width > 600;
-
-    log("Rebuild Map screen: ${kdgaueModel.currentSpeed}");
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: const AppBarWidget(),
@@ -114,12 +104,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   onPointerUp: _onPointerUp,
                   onPointerCancel: _onPointerUp,
                 ),
-                // nonRotatedChildren: [
-                //   Container(
-                //     alignment: Alignment.center,
-                //     child: const Icon(Icons.add),
-                //   ),
-                // ],
                 mapController: _animatedMapController.mapController,
                 children: [
                   TileLayer(
@@ -322,140 +306,12 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
               ),
             ),
             // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
-            Positioned(
-              top: 25,
-              left: 150,
-              child: AvatarGlow(
-                glowColor: Colors.red.shade700,
-                endRadius: 90.0,
-                duration: const Duration(milliseconds: 2000),
-                repeat: true,
-                showTwoGlows: true,
-                repeatPauseDuration: const Duration(milliseconds: 200),
-                child: Material(
-                  elevation: 8.0,
-                  shape: const CircleBorder(),
-                  child: CircleAvatar(
-                    radius: 28.0,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        FloatingActionButton(
-                          backgroundColor: Colors.red,
-                          onPressed: () {
-                            // Show the 80km/h dialog here
-                            sosDialog(context, toggleStackVisibility);
-                          },
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(Icons.car_crash,
-                                  size: 40), // Increase icon size
-                              SizedBox(height: 4), // Add spacing
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 25,
-              left: 5,
-              child: AvatarGlow(
-                glowColor: Colors.yellow.shade900,
-                endRadius: 90.0,
-                duration: const Duration(milliseconds: 2000),
-                repeat: true,
-                showTwoGlows: true,
-                repeatPauseDuration: const Duration(milliseconds: 500),
-                child: Material(
-                  elevation: 8.0,
-                  shape: const CircleBorder(),
-                  child: CircleAvatar(
-                    radius: 28.0,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        FloatingActionButton(
-                          backgroundColor: Colors.amberAccent,
-                          onPressed: () {
-                            warningDialog(context);
-                          },
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(Icons.warning,
-                                  size: 40), // Increase icon size
-                              SizedBox(height: 4), // Add spacing
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 25,
-              left: 5,
-              child: AvatarGlow(
-                glowColor: Colors.yellow.shade900,
-                endRadius: 90.0,
-                duration: const Duration(milliseconds: 2000),
-                repeat: true,
-                showTwoGlows: true,
-                repeatPauseDuration: const Duration(milliseconds: 500),
-                child: Material(
-                  elevation: 8.0,
-                  shape: const CircleBorder(),
-                  child: CircleAvatar(
-                    radius: 28.0,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        FloatingActionButton(
-                          backgroundColor: Colors.amberAccent,
-                          onPressed: () {
-                            updateSpeed1();
-                          },
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Icon(Icons.abc_outlined,
-                                  size: 40), // Increase icon size
-                              SizedBox(height: 4), // Add spacing
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // NÚT BÊN DƯỚI MÀN HÌNH
-            Positioned(
-                bottom: isDesktop
-                    ? 110
-                    : isTablet
-                        ? 110
-                        : 110,
-                right: isDesktop
-                    ? 20
-                    : isTablet
-                        ? 20
-                        : 30,
-                child: FloatingActionButton(
-                  backgroundColor: tilt == 0.0 ? Colors.blue : Colors.red,
-                  onPressed: _toggleTilt,
-                  child: Icon(
-                    (tilt == 0.0) ? Icons.explore : Icons.explore_off,
-                  ),
-                )),
+            ButtonGlowSos(25, 150, context, toggleStackVisibility),
+            ButtonGlowWarning(25, 5, context),
+            ButtonNormal(
+                isDesktop, isTablet, 20, 20, 30, tilt == 0.0, _toggleTilt),
+            ButtonNormal(
+                isDesktop, isTablet, 100, 80, 90, tilt == 0.0, _toggleTracking),
             Positioned(
               bottom: isDesktop
                   ? 110
@@ -515,41 +371,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            Positioned(
-              top: 85,
-              left: 4,
-              child: SizedBox(
-                width: 60,
-                height: 60,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade800,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: KdGaugeView(
-                    minSpeed: 0,
-                    maxSpeed: 100,
-                    animate: false,
-                    alertSpeedArray: const [40, 80, 90],
-                    alertColorArray: const [
-                      Colors.yellow,
-                      Colors.orange,
-                      Colors.red
-                    ],
-                    child: Center(
-                        child: Text(
-                      "${kdgaueModel.currentSpeed ?? 0.0}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )),
-                    // duration: const Duration(seconds: 10),
-                  ),
-                ),
-              ),
-            ),
+            Speedometer()
           ],
         ),
       ),
@@ -847,6 +669,24 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     setState(() {
       tilt = (tilt == 0.0) ? 45.0 : 0.0;
     });
+  }
+
+  void _toggleTracking() {
+    setState(
+      () {
+        _navigationMode = !_navigationMode;
+        _followOnLocationUpdate = _navigationMode
+            ? FollowOnLocationUpdate.always
+            : FollowOnLocationUpdate.never;
+        _turnOnHeadingUpdate = _navigationMode
+            ? TurnOnHeadingUpdate.always
+            : TurnOnHeadingUpdate.never;
+      },
+    );
+    if (_navigationMode) {
+      _followCurrentLocationStreamController.add(18);
+      _turnHeadingUpStreamController.add(null);
+    }
   }
 
 // NÚT SAVE MARKER
@@ -1916,18 +1756,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     speedNotifier.value = speedKmH;
   }
 
-  void updateSpeed1() async {
-    // Position data = await _determinePosition();
-    // Convert speed to km/h
+  // void updateSpeed1() async {
+  //   // Position data = await _determinePosition();
+  //   // Convert speed to km/h
 
-    double speed = kdgaueModel.currentSpeed! + 10;
-    double speedKmH = speed * 3.6;
-    // Update the current speed
-    // speedNotifier.value = speedKmH;
-    kdgaueModel.updateSpeed(speedKmH);
-    log("speedKmH: ${kdgaueModel.currentSpeed}");
-    setState(() {});
-  }
+  //   double speed = kdgaueModel.currentSpeed! + 10;
+  //   double speedKmH = speed * 3.6;
+  //   // Update the current speed
+  //   // speedNotifier.value = speedKmH;
+  //   kdgaueModel.updateSpeed(speedKmH);
+
+  //   setState(() {});
+  // }
 
 // Disable follow and turn temporarily when user is manipulating the map.
   void _onPointerDown(e, l) {

@@ -34,7 +34,7 @@ class KdGaugeView extends StatefulWidget {
 
   final Widget? child;
 
-  KdGaugeView(
+  const KdGaugeView(
       {GlobalKey? key,
       this.speed = 0,
       this.speedTextStyle = const TextStyle(
@@ -72,6 +72,7 @@ class KdGaugeView extends StatefulWidget {
             'Alert speed array length should be equal to Alert Speed Color Array length'),
         super(key: key);
   @override
+  // ignore: no_logic_in_create_state
   KdGaugeViewState createState() => KdGaugeViewState(speed, animate);
 }
 
@@ -81,7 +82,7 @@ class KdGaugeViewState extends State<KdGaugeView>
   late Animation<double> _animation;
 
   double _speed;
-  bool _animate;
+  final bool _animate;
 
   double lastMarkSpeed = 0;
   double _gaugeMarkSpeed = 0;
@@ -153,7 +154,7 @@ class KdGaugeViewState extends State<KdGaugeView>
 
   void updateSpeed(double speed, {bool animate = false, Duration? duration}) {
     if (animate) {
-      this._speed = speed;
+      _speed = speed;
       _controller.reset();
       if (duration != null) _controller.duration = duration;
       _controller.forward();
@@ -223,7 +224,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     //get the center of the view
-    center = size.center(Offset(0, 0));
+    center = size.center(const Offset(0, 0));
 
     double minDimension = size.width > size.height ? size.height : size.width;
     mRadius = minDimension / 2;
@@ -249,7 +250,8 @@ class _KdGaugeCustomPainter extends CustomPainter {
 
     if (activeGaugeGradientColor == null) {
       //Draw active gauge view
-      if (alertSpeedArray.length > 0)
+      if (alertSpeedArray.isNotEmpty)
+        // ignore: curly_braces_in_flow_control_structures
         for (int i = 0; alertSpeedArray.length > i; i++) {
           if (i == 0 && speed <= alertSpeedArray[i]) {
             paint.color = activeGaugeColor;
@@ -265,6 +267,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
           }
         }
       else
+        // ignore: curly_braces_in_flow_control_structures
         paint.color = activeGaugeColor;
     } else {
       //if gradient is available, use the gradient color
@@ -319,7 +322,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
     _drawUnitOfMeasurementText(canvas, size);
 
     //Draw Speed Text
-    // _drawSpeedText(canvas, size);
+    _drawSpeedText(canvas, size);
   }
 
   @override
@@ -341,7 +344,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
   }
 
   void _drawMinText(Canvas canvas, Size size) {
-    TextSpan span = new TextSpan(
+    TextSpan span = TextSpan(
         style: minMaxTextStyle, text: minSpeed.toStringAsFixed(fractionDigits));
     TextPainter textPainter = TextPainter(
       text: span,
@@ -361,7 +364,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
   }
 
   void _drawMaxText(Canvas canvas, Size size) {
-    TextSpan span = new TextSpan(
+    TextSpan span = TextSpan(
         style: minMaxTextStyle, text: maxSpeed.toStringAsFixed(fractionDigits));
     TextPainter textPainter = TextPainter(
       text: span,
@@ -388,8 +391,8 @@ class _KdGaugeCustomPainter extends CustomPainter {
 
     Offset unitOfMeasurementOffset = Offset(size.width / 2, minTextOffset.dy);
 
-    TextSpan span = new TextSpan(
-        style: unitOfMeasurementTextStyle, text: unitOfMeasurement);
+    TextSpan span =
+        TextSpan(style: unitOfMeasurementTextStyle, text: unitOfMeasurement);
     TextPainter textPainter = TextPainter(
       text: span,
       textDirection: TextDirection.ltr,
@@ -409,7 +412,7 @@ class _KdGaugeCustomPainter extends CustomPainter {
 
     Offset? unitOfMeasurementOffset = center;
 
-    TextSpan span = new TextSpan(
+    TextSpan span = TextSpan(
         style: speedTextStyle, text: speed.toStringAsFixed(fractionDigits));
     TextPainter textPainter = TextPainter(
       text: span,

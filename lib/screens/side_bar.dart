@@ -1,14 +1,19 @@
-// ignore: file_names
 import 'package:flutter/material.dart';
 
 class Sidebar extends StatelessWidget {
   final VoidCallback onClose;
-  const Sidebar({super.key, required this.onClose});
+  const Sidebar({Key? key, required this.onClose}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Determine whether it's a mobile or desktop screen
+    bool isMobile = MediaQuery.of(context).size.width < 600;
+
+    // Set the width of the Drawer based on the screen type
+    double drawerWidth = isMobile ? MediaQuery.of(context).size.width : 300.0;
+
     return Drawer(
-      width: MediaQuery.of(context).size.width,
+      width: drawerWidth, // Use the calculated width
       child: ListView(
         padding: EdgeInsets.zero,
         children: [

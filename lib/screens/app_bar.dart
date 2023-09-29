@@ -6,6 +6,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
   Widget placeholderImageWidget() {
     // PC SẼ ĐỂ ẨN MẤT ẢNH LOGO SKYSOFT CÒN MOBILE + TABLET VẪN HIỆN LOGO
     return Container(
@@ -41,6 +42,15 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
           );
         },
       ),
+      // Add an image to the AppBar
+      title: CachedNetworkImage(
+        imageUrl: 'https://tracking.skysoft.vn/img/skysoft_logo.png',
+        fit: BoxFit.fitHeight,
+        width: 250,
+        height: 56,
+        errorWidget: (context, url, error) => placeholderImageWidget(),
+      ),
+      centerTitle: true,
     );
   }
 }
