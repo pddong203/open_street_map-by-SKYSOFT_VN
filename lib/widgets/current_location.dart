@@ -41,9 +41,9 @@ class CurrentLocation extends StatelessWidget {
               markerSize: Size(40, 40),
               markerDirection: MarkerDirection.heading,
               headingSectorRadius: 1,
+              showAccuracyCircle: false,
             ),
           )
-        : CurrentLocationLayer(
-            style: const LocationMarkerStyle(showAccuracyCircle: false));
+        : CurrentLocationLayer();
   }
 }
