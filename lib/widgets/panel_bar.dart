@@ -1,43 +1,29 @@
-import 'dart:convert';
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:skysoft/models/info_location.dart';
-import 'package:http/http.dart' as http;
+import 'package:skysoft/services/api.dart';
 
 class PanelBar extends StatefulWidget {
-  const PanelBar({super.key});
+  final void Function(LatLng) showMarkerOnMap; // Add this line
+
+  const PanelBar(
+      {super.key, required this.showMarkerOnMap}); // Add this constructor
 
   @override
   State<PanelBar> createState() => _PanelBarState();
 }
 
-class _PanelBarState extends State<PanelBar> {
+class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
   String homeAddress = "Set once and go";
   String workAddress = "Set once and go";
-
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   List<InfoLocation> _infoLocationList = [];
 
-  Future<List<dynamic>> repNameLocation(String value) async {
-    try {
-      String url =
-          'https://nominatim.openstreetmap.org/search?q=$value&format=json&polygon_geojson=1&addressdetails=1';
-
-      var response =
-          await http.get(Uri.parse(url)); // Use http.get for a GET request
-
-      if (response.statusCode == 200) {
-        var decodedResponse =
-            jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-        return decodedResponse;
-      }
-    } catch (error) {
-      // Handle any exceptions that occur during the process
-      print('Error: $error');
-    }
-    return [];
+  @override
+  void initState() {
+    super.initState();
   }
 
   void showSearchFullScreen() {
@@ -78,8 +64,8 @@ class _PanelBarState extends State<PanelBar> {
                   List<dynamic> result = await repNameLocation(value);
                   _infoLocationList =
                       result.map((e) => InfoLocation.fromJson(e)).toList();
-                  log("_infoLocationList: ${_infoLocationList}");
                   setState(() {});
+                  // ignore: use_build_context_synchronously
                   Navigator.of(context).pop();
                   showSearchFullScreen();
                 },
@@ -326,17 +312,10 @@ class _PanelBarState extends State<PanelBar> {
                                     title: Text(
                                         _infoLocationList[index].displayname),
                                     onTap: () {
-                                      // _animatedMapController.mapController.move(
-                                      //   LatLng(_infoLocationList[index].lat,
-                                      //       _infoLocationList[index].lon),
-                                      //   15.0,
-                                      // );
                                       _focusNode.unfocus();
-                                      // showMarkerOnMap(
-                                      //   LatLng(_infoLocationList[index].lat,
-                                      //       _infoLocationList[index].lon),
-                                      // );
-
+                                      widget.showMarkerOnMap(LatLng(
+                                          _infoLocationList[index].lat,
+                                          _infoLocationList[index].lon));
                                       _infoLocationList.clear();
                                       _searchController.clear();
                                       setState(() {});
@@ -382,7 +361,6 @@ class _PanelBarState extends State<PanelBar> {
                 child: GestureDetector(
                   onTap: () {
                     showSearchFullScreen(); // Call the function to show the fullscreen container
-                    log("Where to ?");
                   },
                   child: Container(
                     // Add your custom decoration here

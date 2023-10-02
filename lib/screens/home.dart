@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skysoft/screens/map_skysoft.dart';
 
-import '../models/navigation_example.dart';
-
 class Home extends StatefulWidget {
   const Home({super.key});
 

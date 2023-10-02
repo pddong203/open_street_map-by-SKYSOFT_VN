@@ -1,6 +1,7 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 
+// ignore: non_constant_identifier_names
 Widget ButtonNormal(
   bool isDesktop,
   bool isTablet,
@@ -26,6 +27,7 @@ Widget ButtonNormal(
       ));
 }
 
+// ignore: non_constant_identifier_names
 Widget ButtonGlowSos(
   double vTop,
   double vLeft,
@@ -150,6 +152,7 @@ Widget ButtonGlowSos(
   );
 }
 
+// ignore: non_constant_identifier_names
 Widget ButtonGlowWarning(
   double vTop,
   double vLeft,
@@ -159,7 +162,7 @@ Widget ButtonGlowWarning(
     top: vTop,
     left: vLeft,
     child: AvatarGlow(
-      glowColor: Colors.red.shade700,
+      glowColor: Colors.orange.shade700,
       endRadius: 90.0,
       duration: const Duration(milliseconds: 2000),
       repeat: true,
@@ -174,7 +177,7 @@ Widget ButtonGlowWarning(
             alignment: Alignment.center,
             children: [
               FloatingActionButton(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.yellow,
                 onPressed: () => showDialog(
                   context: context,
                   builder: (BuildContext context) {

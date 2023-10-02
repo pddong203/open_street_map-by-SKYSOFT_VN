@@ -5,9 +5,6 @@ void main() {
   runApp(const MyApp());
 }
 
-// muti languages
-// theme
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

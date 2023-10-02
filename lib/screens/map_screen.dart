@@ -21,6 +21,8 @@ import 'package:skysoft/utils/save_marker_list_logic.dart';
 import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/kdgaugeview.dart';
 import 'package:skysoft/widgets/save_marker_list_popup.dart';
+import 'package:skysoft/widgets/warning_dialog.dart';
+
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 // ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
@@ -727,7 +729,6 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     });
   }
 
-//
   void toggleStackVisibility() {
     setState(() {
       isStackVisible = !isStackVisible;

@@ -10,7 +10,7 @@ class Sidebar extends StatelessWidget {
     bool isMobile = MediaQuery.of(context).size.width < 600;
 
     // Set the width of the Drawer based on the screen type
-    double drawerWidth = isMobile ? MediaQuery.of(context).size.width : 300.0;
+    double drawerWidth = isMobile ? MediaQuery.of(context).size.width : 400.0;
 
     return Drawer(
       width: drawerWidth, // Use the calculated width
