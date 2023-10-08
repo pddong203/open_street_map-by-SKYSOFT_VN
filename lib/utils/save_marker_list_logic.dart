@@ -1,7 +1,7 @@
-import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// XÓA MARKER TRONG NÚT SAVE MARKER
 Future<void> removeMarkerFromList(
     LatLng marker, List<LatLng> savedMarkers) async {
   if (savedMarkers.contains(marker)) {
@@ -10,6 +10,7 @@ Future<void> removeMarkerFromList(
   }
 }
 
+// LƯU MARKER VÀO LOCAL ( LAT , LNG)
 Future<void> saveMarkersToSharedPreferences(List<LatLng> markers) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String> markerList = markers
@@ -19,6 +20,7 @@ Future<void> saveMarkersToSharedPreferences(List<LatLng> markers) async {
   await prefs.setStringList('savedMarkers', markerList);
 }
 
+// LOAD MARKER LIST MARKER
 Future<void> loadSavedMarkers(Function(List<LatLng>) onLoadedMarkers) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String>? markerStrings = prefs.getStringList('savedMarkers');
@@ -33,7 +35,7 @@ Future<void> loadSavedMarkers(Function(List<LatLng>) onLoadedMarkers) async {
   }
 }
 
-// MẪU CỦA ANH AN 
+// MẪU CỦA ANH AN
 // void rotateMap(AnimatedMapController animatedMapController, double rotate) {
 //   if (rotate > 180) {
 //     return;

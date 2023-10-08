@@ -1,5 +1,3 @@
-// ignore_for_file: non_constant_identifier_names
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -14,15 +12,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skysoft/models/info_location.dart';
 import 'package:skysoft/models/tilt.dart';
-import 'package:skysoft/screens/app_bar.dart';
-import 'package:skysoft/screens/side_bar.dart';
+import 'package:skysoft/widgets/app_bar.dart';
+import 'package:skysoft/widgets/side_bar.dart';
 import 'package:http/http.dart' as http;
 import 'package:skysoft/utils/save_marker_list_logic.dart';
 import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/kdgaugeview.dart';
 import 'package:skysoft/widgets/save_marker_list_popup.dart';
-import 'package:skysoft/widgets/warning_dialog.dart';
-
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 // ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
@@ -380,6 +376,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
+  // ignore: non_constant_identifier_names
   Widget Speedometer() {
     final key = GlobalKey<KdGaugeViewState>();
     updateSpeed(speedNotifier);
@@ -391,6 +388,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     );
   }
 
+  // ignore: non_constant_identifier_names
   Widget SpeedometerWidget({
     required final ValueNotifier<double> speedNotifier,
     required final GlobalKey<KdGaugeViewState> key,
@@ -692,29 +690,30 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // NÚT SAVE MARKER
-  void showSaveMarkersList() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return SavedMarkersList(
-          savedMarkers: savedMarkers,
-          onRemoveMarker: (LatLng marker) {
-            removeMarkerFromList(marker, savedMarkers);
-          },
-          onShowMarkerOnMap: (LatLng marker) {
-            showMarkerOnMap(marker);
-          },
-        );
-      },
-    );
-  }
+  // void showSaveMarkersList() async {
+  //   log("message");
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder: (context) {
+  //       return SavedMarkersList(
+  //         savedMarkers: savedMarkers,
+  //         onRemoveMarker: (LatLng marker) {
+  //           removeMarkerFromList(marker, savedMarkers);
+  //         },
+  //         onShowMarkerOnMap: (LatLng marker) {
+  //           showMarkerOnMap(marker);
+  //         },
+  //       );
+  //     },
+  //   );
+  // }
 
-  void updateSavedMarkers(List<LatLng> markers) {
-    setState(() {
-      savedMarkers = markers;
-    });
-  }
+  // void updateSavedMarkers(List<LatLng> markers) {
+  //   setState(() {
+  //     savedMarkers = markers;
+  //   });
+  // }
 
 // HIỆU ỨNG NHẤP NHÁY CẢNH BÁO
   void showStackRepeatedly() {
@@ -856,7 +855,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                                             print('Button $index pressed!');
                                           }
                                           if (index == 0) {
-                                            showSaveMarkersList();
+                                            // showSaveMarkersList();
                                           }
                                         },
                                         style: ElevatedButton.styleFrom(
@@ -1715,7 +1714,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     updateSpeed(speedNotifier);
     showHomeAddress();
     showWorkAddress();
-    loadSavedMarkers(updateSavedMarkers);
+    // loadSavedMarkers(updateSavedMarkers);
     showStackRepeatedly();
     markers.addAll([
       Marker(

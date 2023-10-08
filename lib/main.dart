@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:skysoft/screens/home.dart';
+import 'package:skysoft/screens/map_skysoft.dart';
 
 void main() {
   runApp(const MyApp());

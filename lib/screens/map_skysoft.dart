@@ -7,8 +7,8 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:skysoft/models/tilt.dart';
-import 'package:skysoft/screens/app_bar.dart';
-import 'package:skysoft/screens/side_bar.dart';
+import 'package:skysoft/widgets/app_bar.dart';
+import 'package:skysoft/widgets/side_bar.dart';
 import 'package:skysoft/utils/save_marker_list_logic.dart';
 import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/current_location.dart';
@@ -28,7 +28,6 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
   MapController mapController = MapController();
   double tilt = 0.0;
   bool isShowDrawer = false;
-  late int _pointerCount;
   late CurrentLocation currentLocation;
   List<Marker> tappedMarkers = [];
   List<LatLng> savedMarkers = [];
@@ -52,7 +51,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     showStackRepeatedly();
-    _pointerCount = 0;
+    pointerCount = 0;
     currentLocation = CurrentLocation(
       followCurrentLocationStreamController:
           followCurrentLocationStreamController = StreamController<double?>(),
@@ -66,10 +65,17 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
     );
   }
 
+  @override
+  void dispose() {
+    followCurrentLocationStreamController.close();
+    turnHeadingUpStreamController.close();
+    super.dispose();
+  }
+
 // Tắt tính năng theo dõi và rẽ tạm thời khi người dùng đang thao tác trên bản đồ.
   void _onPointerDown(e, l) {
     // log("_onPointerDown");
-    _pointerCount++;
+    pointerCount++;
 
     currentLocation = CurrentLocation(
       navigationMode: navigationMode,
@@ -84,7 +90,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
 
   // Cho phép theo dõi và quay lại khi người dùng kết thúc thao tác.
   void _onPointerUp(e, l) {
-    if (--_pointerCount == 0) {
+    if (--pointerCount == 0) {
       StreamController<double?> followCurrentLocationStreamController =
           StreamController<double?>();
       followCurrentLocationStreamController.add(18);
@@ -106,7 +112,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
     }
   }
 
-// DÙNG GPS ĐỊNH VỊ VỊ TRÍ HIỆN TẠI
+  // XIN CẦP QUYỀN TRUY CẬP GPS
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -147,7 +153,6 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
   void currentLoc() async {
     Position data = await _determinePosition();
     curloca = LatLng(data.latitude, data.longitude);
-    updateMarkerAndZoom();
     // Toggle the visibility of the CurrentLocationLayer
     isCurrentLocationLayerActive = true;
     navigationMode = false;
@@ -160,6 +165,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
       turnHeadingUpStreamController: StreamController<void>(),
       toggleCurrentLocationLayer: () {},
     );
+    updateMarkerAndZoom();
     setState(() {});
   }
 
@@ -210,9 +216,8 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
 
 // CHỨC NĂNG TILT NGHIÊNG 45 ĐỘ BẢN ĐỒ
   void toggleTilt() {
-    setState(() {
-      tilt = (tilt == 0.0) ? 45.0 : 0.0;
-    });
+    tilt = (tilt == 0.0) ? 45.0 : 0.0;
+    setState(() {});
   }
 
 // SHOW MARKER MÀU ĐỎ LÊN BẢN ĐỒ ( THANH SEARCH + SAVE MARKER)
@@ -258,76 +263,77 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
 // TAP VÀO MARKER MỞ DIALOG ( Save marker + Delete + Close)
   Future<void> infoDialog(LatLng tappedPoint) {
     return showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0),
-                side: const BorderSide(
-                  color: Colors.blueAccent,
-                  width: 3.0,
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
+          side: const BorderSide(
+            color: Colors.blueAccent,
+            width: 3.0,
+          ),
+        ),
+        title: Text(
+          'Marker Info',
+          style: TextStyle(
+            color:
+                Colors.blue.shade500, // Change the color of the title text here
+          ),
+        ),
+        content: Text(
+          'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () async {
+              // Save the marker to SharedPreferences without adding it to savedMarkers list
+              await saveMarkersToSharedPreferences([tappedPoint]);
+
+              // ignore: use_build_context_synchronously
+              Navigator.of(context).pop(); // Đóng hộp thoại
+
+              // ignore: use_build_context_synchronously
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  shape: StadiumBorder(),
+                  content: Text('Marker saved'),
+                  duration:
+                      Duration(seconds: 3), // Thời gian hiển thị của SnackBar
                 ),
+              );
+            },
+            child: const Text(
+              'Save Marker',
+              style: TextStyle(
+                color: Colors.green,
               ),
-              title: Text(
-                'Marker Info',
-                style: TextStyle(
-                  color: Colors
-                      .blue.shade500, // Change the color of the title text here
-                ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // Remove the tapped marker from the tappedMarkers list
+              setState(() {
+                tappedMarkers
+                    .removeWhere((marker) => marker.point == tappedPoint);
+              });
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text(
+              'Delete Marker',
+              style: TextStyle(
+                color: Colors.red,
+                // Change the color of the text here
               ),
-              content: Text(
-                'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () async {
-                    setState(() {
-                      // Lưu lại vị trí của marker vào danh sách lưu trữ
-                      savedMarkers.add(tappedPoint);
-                    });
-                    await saveMarkersToSharedPreferences(savedMarkers);
-                    // ignore: use_build_context_synchronously
-                    Navigator.of(context).pop(); // Đóng hộp thoại
-                    // ignore: use_build_context_synchronously
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Marker saved'),
-                        duration: Duration(
-                            seconds: 2), // Thời gian hiển thị của SnackBar
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Save Marker',
-                    style: TextStyle(
-                      color: Colors.green,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Remove the tapped marker from the tappedMarkers list
-                    setState(() {
-                      tappedMarkers
-                          .removeWhere((marker) => marker.point == tappedPoint);
-                    });
-                    Navigator.of(context).pop(); // Close the dialog
-                  },
-                  child: const Text(
-                    'Delete Marker',
-                    style: TextStyle(
-                      color: Colors.red,
-                      // Change the color of the text here
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
-                  },
-                  child: const Text('Close'),
-                ),
-              ],
-            ));
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
 // XÓA CÁC MARKER CÓ TRÊN BẢN ĐỒ
@@ -441,6 +447,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
             ButtonGlowWarning(25, 5, context),
             ButtonNormal(
                 isDesktop, isTablet, 20, 20, 30, tilt == 0.0, toggleTilt),
+            ButtonCurrentLocation(isDesktop, isTablet, 20, 20, 30, currentLoc),
             Positioned(
               bottom: isDesktop
                   ? 110
@@ -485,29 +492,6 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
                 },
                 child: Icon(
                   navigationMode ? Icons.near_me_disabled : Icons.near_me,
-                ),
-              ),
-            ),
-            Positioned(
-              // The position for the current location button based on screen size
-              bottom: isDesktop
-                  ? 110
-                  : isTablet
-                      ? 110
-                      : 110,
-              left: isDesktop
-                  ? 20
-                  : isTablet
-                      ? 20
-                      : 30,
-              // The position for the current location button based on screen size
-              child: FloatingActionButton(
-                backgroundColor: Colors.green,
-                onPressed: currentLoc,
-                tooltip: 'Get Current Location',
-                child: const Icon(
-                  Icons.my_location,
-                  color: Colors.white,
                 ),
               ),
             ),

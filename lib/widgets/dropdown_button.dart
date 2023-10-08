@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
 
+// ignore: must_be_immutable
 class DropDownButton extends StatefulWidget {
   AnimatedMapController animatedMapController;
   Function clearAllMarkers;

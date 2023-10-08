@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:skysoft/utils/save_marker_list_logic.dart';
 
-import 'package:latlong2/latlong.dart'; // Import the package for LatLng if needed
-
-class SavedMarkersList extends StatelessWidget {
-  final List<LatLng> savedMarkers;
-  final Function(LatLng) onRemoveMarker;
-  final Function(LatLng) onShowMarkerOnMap;
-
+class SavedMarkersList extends StatefulWidget {
   const SavedMarkersList({
-    super.key,
-    required this.savedMarkers,
-    required this.onRemoveMarker,
-    required this.onShowMarkerOnMap,
-  });
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _SavedMarkersListState createState() => _SavedMarkersListState();
+}
+
+class _SavedMarkersListState extends State<SavedMarkersList> {
+  List<LatLng> savedMarkers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadSavedMarkers();
+  }
+
+  void loadSavedMarkers() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? markerStrings = prefs.getStringList('savedMarkers');
+    if (markerStrings != null) {
+      setState(() {
+        savedMarkers = markerStrings.map((markerString) {
+          List<String> parts = markerString.split(',');
+          double latitude = double.parse(parts[0]);
+          double longitude = double.parse(parts[1]);
+          return LatLng(latitude, longitude);
+        }).toList();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +88,11 @@ class SavedMarkersList extends StatelessWidget {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      onRemoveMarker(marker);
+                                      setState(() {
+                                        savedMarkers.remove(marker);
+                                      });
+                                      saveMarkersToSharedPreferences(
+                                          savedMarkers);
                                       Navigator.pop(dialogContext);
                                     },
                                     child: const Text('Delete'),
@@ -77,14 +104,12 @@ class SavedMarkersList extends StatelessWidget {
                         },
                       ),
                       onTap: () {
-                        onShowMarkerOnMap(marker);
                         Navigator.of(context).pop();
                         Navigator.of(context).pop();
                       },
                     );
                   },
                 ),
-          // ...
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flutter/material.dart';
 
+// NÚT BÊN TRÊN MÀN HÌNH
 // ignore: non_constant_identifier_names
 Widget ButtonNormal(
   bool isDesktop,
@@ -25,6 +26,34 @@ Widget ButtonNormal(
           isTilt ? Icons.explore : Icons.explore_off,
         ),
       ));
+}
+
+// ignore: non_constant_identifier_names
+Widget ButtonCurrentLocation(
+  bool isDesktop,
+  bool isTablet,
+  double vRightDesktop,
+  double vRightTablet,
+  double vRightMobile,
+  Function callBack,
+) {
+  return Positioned(
+    bottom: 110,
+    left: isDesktop
+        ? vRightDesktop
+        : isTablet
+            ? vRightTablet
+            : vRightMobile,
+    child: FloatingActionButton(
+      backgroundColor: Colors.green,
+      onPressed: () => callBack(),
+      tooltip: 'Get Current Location',
+      child: const Icon(
+        Icons.my_location,
+        color: Colors.white,
+      ),
+    ),
+  );
 }
 
 // ignore: non_constant_identifier_names

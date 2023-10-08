@@ -38,10 +38,10 @@ class CurrentLocation extends StatelessWidget {
                 Icons.navigation,
                 color: Colors.green,
               ),
-              markerSize: Size(40, 40),
+              markerSize: Size.square(100),
               markerDirection: MarkerDirection.heading,
-              headingSectorRadius: 1,
               showAccuracyCircle: false,
+              showHeadingSector: false,
             ),
           )
         : CurrentLocationLayer();
