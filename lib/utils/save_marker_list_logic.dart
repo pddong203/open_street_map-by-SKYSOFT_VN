@@ -1,46 +1,60 @@
+import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// XÓA MARKER TRONG NÚT SAVE MARKER
-Future<void> removeMarkerFromList(
-    LatLng marker, List<LatLng> savedMarkers) async {
-  if (savedMarkers.contains(marker)) {
-    savedMarkers.remove(marker);
-    await saveMarkersToSharedPreferences(savedMarkers);
+// Remove marker at a specific index
+Future<void> removeMarkerAtIndex(int index) async {
+  try {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? markerStrings = prefs.getStringList('savedMarkers');
+    if (markerStrings != null && index >= 0 && index < markerStrings.length) {
+      markerStrings.removeAt(index);
+      await prefs.setStringList('savedMarkers', markerStrings);
+      if (kDebugMode) {
+        print('Marker removed successfully at index: $index');
+      }
+    } else {
+      if (kDebugMode) {
+        print('Invalid index or marker not found at index: $index');
+      }
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error removing marker: $e');
+    }
   }
 }
 
-// LƯU MARKER VÀO LOCAL ( LAT , LNG)
-Future<void> saveMarkersToSharedPreferences(List<LatLng> markers) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  List<String> markerList = markers
-      .map((LatLng marker) => "${marker.latitude},${marker.longitude}")
-      .toList();
-
-  await prefs.setStringList('savedMarkers', markerList);
-}
-
-// LOAD MARKER LIST MARKER
-Future<void> loadSavedMarkers(Function(List<LatLng>) onLoadedMarkers) async {
+// Save a marker to SharedPreferences
+Future<void> saveMarkerToSharedPreferences(String marker) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   List<String>? markerStrings = prefs.getStringList('savedMarkers');
-  if (markerStrings != null) {
-    List<LatLng> loadedMarkers = markerStrings.map((markerString) {
-      List<String> parts = markerString.split(',');
-      double latitude = double.parse(parts[0]);
-      double longitude = double.parse(parts[1]);
-      return LatLng(latitude, longitude);
-    }).toList();
-    onLoadedMarkers(loadedMarkers);
-  }
+  markerStrings = markerStrings ?? [];
+  markerStrings.add(marker);
+
+  await prefs.setStringList('savedMarkers', markerStrings);
 }
 
-// MẪU CỦA ANH AN
-// void rotateMap(AnimatedMapController animatedMapController, double rotate) {
-//   if (rotate > 180) {
-//     return;
-//   }
-//   animatedMapController.animatedRotateFrom(
-//     rotate,
-//   );
-// }
+// Load markers from SharedPreferences
+Future<void> loadSavedMarkers(Function(List<LatLng>) onLoadedMarkers) async {
+  try {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? markerStrings = prefs.getStringList('savedMarkers');
+    if (markerStrings != null) {
+      List<LatLng> loadedMarkers = [];
+      for (String markerString in markerStrings) {
+        List<String> parts = markerString.split(',');
+        if (parts.length >= 2) {
+          double latitude = double.parse(parts[0]);
+          double longitude = double.parse(parts[1]);
+          loadedMarkers.add(LatLng(latitude, longitude));
+        }
+      }
+      onLoadedMarkers(loadedMarkers);
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error loading markers: $e');
+    }
+  }
+}

@@ -1,19 +1,17 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skysoft/models/info_location.dart';
 import 'package:skysoft/services/api.dart';
+import 'package:skysoft/utils/share_preferences.dart';
 
-/**
- * Đây là nội dung hiển thị khi bấm vào home
- * 
- * 
- */
-
+// ignore: non_constant_identifier_names
 Widget SearchHome(bool isHomePress) {
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
+  // ignore: unused_local_variable
   final FocusNode _focusNode = FocusNode();
-  List<InfoLocation> _infoLocationList = [];
-  List<InfoLocation> _options = <InfoLocation>[];
+  List<InfoLocation> infoLocationList = <InfoLocation>[];
+
   return StatefulBuilder(
     builder: (BuildContext context, StateSetter setState) {
       return Container(
@@ -40,7 +38,7 @@ Widget SearchHome(bool isHomePress) {
             ),
             const SizedBox(height: 10),
             TextFormField(
-              controller: _searchController,
+              controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Enter a location...',
                 border: OutlineInputBorder(
@@ -52,7 +50,8 @@ Widget SearchHome(bool isHomePress) {
               ),
               onFieldSubmitted: (String value) async {
                 List<dynamic> result = await repNameLocation(value);
-                _options = result.map((e) => InfoLocation.fromJson(e)).toList();
+                infoLocationList =
+                    result.map((e) => InfoLocation.fromJson(e)).toList();
                 setState(
                   () {},
                 );
@@ -62,21 +61,23 @@ Widget SearchHome(bool isHomePress) {
             Expanded(
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: _options.length,
+                itemCount: infoLocationList.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_options[index].displayname),
+                    title: Text(infoLocationList[index].displayname),
                     onTap: () {
                       if (isHomePress) {
-                        String selectedAddress = _options[index].displayname;
-                        double? latitude = _options[index].lat;
-                        double? longitude = _options[index].lon;
+                        String selectedAddress =
+                            infoLocationList[index].displayname;
+                        double? latitude = infoLocationList[index].lat;
+                        double? longitude = infoLocationList[index].lon;
                         showSaveHomeAddressDialog(
                             context, selectedAddress, latitude, longitude);
                       } else {
-                        String selectedAddress = _options[index].displayname;
-                        double? latitude = _options[index].lat;
-                        double? longitude = _options[index].lon;
+                        String selectedAddress =
+                            infoLocationList[index].displayname;
+                        double? latitude = infoLocationList[index].lat;
+                        double? longitude = infoLocationList[index].lon;
                         showSaveWorkAddressDialog(
                             context, selectedAddress, latitude, longitude);
                       }
@@ -180,8 +181,8 @@ void showSaveWorkAddressDialog(
               Navigator.of(context, rootNavigator: true).pop();
               Navigator.of(context).pop(); // Đóng dialog
               // showWorkAddress();
-              // _searchController.clear();
-              // _options.clear();
+              // searchController.clear();
+              // infoLocationList.clear();
               // handleWorkButton(); // Xử lý hành động của nút Work Address
             },
             style: ElevatedButton.styleFrom(
@@ -202,18 +203,4 @@ void showSaveWorkAddressDialog(
       );
     },
   );
-}
-
-void saveHomeAddress(String address, double latitude, double longitude) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setString('home_address', address);
-  prefs.setDouble('home_latitude', latitude);
-  prefs.setDouble('home_longitude', longitude);
-}
-
-void saveWorkAddress(String address, double latitude, double longitude) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setString('work_address', address);
-  prefs.setDouble('work_latitude', latitude);
-  prefs.setDouble('work_longitude', longitude);
 }

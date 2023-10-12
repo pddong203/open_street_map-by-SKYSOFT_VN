@@ -1,11 +1,9 @@
 import 'dart:developer';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:skysoft/models/info_location.dart';
-import 'package:skysoft/services/api.dart';
-import 'package:skysoft/widgets/modal_content/search_fullScreen.dart';
+import 'package:skysoft/widgets/search_bar/search_fullScreen.dart';
+import 'package:skysoft/widgets/search_bar/search_home.dart';
 import 'package:skysoft/widgets/save_marker_list_popup.dart';
 
 class PanelBar extends StatefulWidget {
@@ -21,9 +19,6 @@ class PanelBar extends StatefulWidget {
 class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
   String homeAddress = "Set once and go";
   String workAddress = "Set once and go";
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  List<InfoLocation> _infoLocationList = [];
 
 // NÚT SAVE MARKER
   void showSaveMarkersList() async {
@@ -31,7 +26,9 @@ class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return const SavedMarkersList();
+        return SavedMarkersList(
+          showMarkerOnMap: widget.showMarkerOnMap,
+        );
       },
     );
   }
@@ -77,8 +74,13 @@ class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
                     if (temp2 != null) {
                       workAddress = temp2;
                     }
-                    showModal(SearchFullScreen(context, homeAddress,
-                        workAddress)); // Call the function to show the fullscreen container
+                    // ignore: use_build_context_synchronously
+                    showModal(SearchFullScreen(
+                        context,
+                        homeAddress,
+                        workAddress,
+                        widget
+                            .showMarkerOnMap)); // Call the function to show the fullscreen container
                   },
                   child: Container(
                     // Add your custom decoration here
@@ -110,7 +112,13 @@ class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
               ),
               GestureDetector(
                 onTap: () {
-                  // showSearchFullScreen(); // Call the function to show the fullscreen container
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (context) {
+                      return SearchHome(true);
+                    },
+                  ); // Call the function to show the fullscreen container
                   log("Home");
                 },
                 child: Container(
@@ -146,7 +154,13 @@ class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
               ),
               GestureDetector(
                 onTap: () {
-                  // showSearchFullScreen(); // Call the function to show the fullscreen container
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (context) {
+                      return SearchHome(true);
+                    },
+                  ); // Call the function to show the fullscreen container
                   log("Work");
                 },
                 child: Container(
@@ -259,6 +273,7 @@ class _PanelBarState extends State<PanelBar> with TickerProviderStateMixin {
   }
 }
 
+// Lấy vị trí HOME từ SharedPreferences
 Future<String?> getHomeAddress() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   return prefs.getString('home_address');

@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skysoft/models/tilt.dart';
 import 'package:skysoft/widgets/app_bar.dart';
 import 'package:skysoft/widgets/side_bar.dart';
@@ -17,7 +20,9 @@ import 'package:skysoft/widgets/panel_bar.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class MapSkysoft extends StatefulWidget {
-  const MapSkysoft({super.key});
+  // Add this callback function
+
+  const MapSkysoft({Key? key}) : super(key: key);
 
   @override
   State<MapSkysoft> createState() => _MapSkysoftState();
@@ -29,6 +34,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
   double tilt = 0.0;
   bool isShowDrawer = false;
   late CurrentLocation currentLocation;
+  int tapCount = 0;
   List<Marker> tappedMarkers = [];
   List<LatLng> savedMarkers = [];
   List<Marker> markers = [];
@@ -261,7 +267,9 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
   }
 
 // TAP VÀO MARKER MỞ DIALOG ( Save marker + Delete + Close)
-  Future<void> infoDialog(LatLng tappedPoint) {
+  Future<void> infoDialog(LatLng tappedPoint) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -285,19 +293,26 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
         actions: <Widget>[
           TextButton(
             onPressed: () async {
-              // Save the marker to SharedPreferences without adding it to savedMarkers list
-              await saveMarkersToSharedPreferences([tappedPoint]);
+              String markerString =
+                  '${tappedPoint.latitude},${tappedPoint.longitude}';
 
-              // ignore: use_build_context_synchronously
-              Navigator.of(context).pop(); // Đóng hộp thoại
+              // Save the marker to SharedPreferences
+              await saveMarkerToSharedPreferences(markerString);
 
-              // ignore: use_build_context_synchronously
+              // Retrieve the updated list of markers from SharedPreferences
+              List<String>? markerStrings = prefs.getStringList('savedMarkers');
+              log("markerStrings: $markerStrings");
+
+              Navigator.of(context).pop(); // Close the dialog
+
+              // Show a SnackBar to indicate that the marker is saved
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   shape: StadiumBorder(),
                   content: Text('Marker saved'),
                   duration:
-                      Duration(seconds: 3), // Thời gian hiển thị của SnackBar
+                      Duration(seconds: 1), // Thời gian hiển thị của SnackBar
                 ),
               );
             },
@@ -334,6 +349,29 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  void centerMarkers() {
+    // Increment the tap count on each tap
+    tapCount++;
+
+    if (tappedMarkers.isEmpty) return;
+
+    final points = tappedMarkers.map((m) => m.point).toList();
+    if (points.isNotEmpty) {
+      if (tapCount == 1) {
+        // Center on the points for the first tap
+        _animatedMapController.centerOnPoints(
+          points,
+        );
+      } else if (tapCount == 2) {
+        // Zoom out on the second tap
+        _animatedMapController.animatedZoomOut(curve: Curves.easeInOut);
+
+        // Reset the tap count after the second tap
+        tapCount = 0;
+      }
+    }
   }
 
 // XÓA CÁC MARKER CÓ TRÊN BẢN ĐỒ
@@ -406,11 +444,12 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
                   if (isCurrentLocationLayerActive) currentLocation,
                   MarkerLayer(
                     rotate: true,
-                    markers: tappedMarkers,
+                    markers: [...markers, ...tappedMarkers],
                   ),
                 ],
               ),
             ),
+
             // HIỆU ỨNG NHÁY MÀN HÌNH NGUY HIỂM
             Stack(
               children: [
@@ -442,6 +481,7 @@ class _MapSkysoftState extends State<MapSkysoft> with TickerProviderStateMixin {
             DropDownButton(
               animatedMapController: _animatedMapController,
               clearAllMarkers: clearAllMarkers,
+              centerMarkers: centerMarkers,
             ),
             ButtonGlowSos(25, 150, context, toggleStackVisibility),
             ButtonGlowWarning(25, 5, context),

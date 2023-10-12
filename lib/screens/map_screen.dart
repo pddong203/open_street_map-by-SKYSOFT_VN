@@ -15,10 +15,8 @@ import 'package:skysoft/models/tilt.dart';
 import 'package:skysoft/widgets/app_bar.dart';
 import 'package:skysoft/widgets/side_bar.dart';
 import 'package:http/http.dart' as http;
-import 'package:skysoft/utils/save_marker_list_logic.dart';
 import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/kdgaugeview.dart';
-import 'package:skysoft/widgets/save_marker_list_popup.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 // ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
@@ -1865,7 +1863,7 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   // Lưu lại vị trí của marker vào danh sách lưu trữ
                   savedMarkers.add(tappedPoint);
                 });
-                await saveMarkersToSharedPreferences(savedMarkers);
+                // await saveMarkersToSharedPreferences(savedMarkers);
                 // ignore: use_build_context_synchronously
                 Navigator.of(context).pop(); // Đóng hộp thoại
                 // ignore: use_build_context_synchronously

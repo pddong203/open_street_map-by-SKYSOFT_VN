@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,21 +8,24 @@ import 'package:latlong2/latlong.dart';
 class DropDownButton extends StatefulWidget {
   AnimatedMapController animatedMapController;
   Function clearAllMarkers;
+  Function centerMarkers;
 
-  DropDownButton(
-      {super.key,
-      required this.animatedMapController,
-      required this.clearAllMarkers});
+  DropDownButton({
+    super.key,
+    required this.animatedMapController,
+    required this.clearAllMarkers,
+    required this.centerMarkers,
+  });
 
   @override
   State<DropDownButton> createState() => _DropDownButtonState();
 }
 
-class _DropDownButtonState extends State<DropDownButton> {
+class _DropDownButtonState extends State<DropDownButton>
+    with TickerProviderStateMixin {
   bool isExpanded = false;
   late LatLng modifiedCenter;
   double finalDirection = 0.0;
-  int tapCount = 0;
 
   @override
   void initState() {
@@ -184,29 +186,6 @@ class _DropDownButtonState extends State<DropDownButton> {
     widget.animatedMapController.animatedZoomOut();
   }
 
-  void centerMarkers() {
-    // Increment the tap count on each tap
-    tapCount++;
-
-    // if (tappedMarkers.isEmpty) return;
-
-    // final points = tappedMarkers.map((m) => m.point).toList();
-    // if (points.isNotEmpty) {
-    //   if (tapCount == 1) {
-    //     // Center on the points for the first tap
-    //     _animatedMapController.centerOnPoints(
-    //       points,
-    //     );
-    //   } else if (tapCount == 2) {
-    //     // Zoom out on the second tap
-    //     _animatedMapController.animatedZoomOut(curve: Curves.easeInOut);
-
-    //     // Reset the tap count after the second tap
-    //     tapCount = 0;
-    //   }
-    // }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -314,7 +293,7 @@ class _DropDownButtonState extends State<DropDownButton> {
               height: 40,
               child: FloatingActionButton(
                 backgroundColor: Colors.blueGrey,
-                onPressed: centerMarkers,
+                onPressed: () => widget.centerMarkers(),
                 tooltip: 'Center the Markers',
                 child:
                     const Icon(Icons.center_focus_strong, color: Colors.white),

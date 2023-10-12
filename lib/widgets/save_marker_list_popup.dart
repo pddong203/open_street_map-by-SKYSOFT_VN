@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:skysoft/utils/save_marker_list_logic.dart';
 
 class SavedMarkersList extends StatefulWidget {
+  final Function(LatLng) showMarkerOnMap; // Callback to add a marker to the map
+
   const SavedMarkersList({
     Key? key,
+    required this.showMarkerOnMap,
   }) : super(key: key);
 
   @override
@@ -22,7 +24,7 @@ class _SavedMarkersListState extends State<SavedMarkersList> {
     loadSavedMarkers();
   }
 
-  void loadSavedMarkers() async {
+  Future<void> loadSavedMarkers() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String>? markerStrings = prefs.getStringList('savedMarkers');
     if (markerStrings != null) {
@@ -34,6 +36,25 @@ class _SavedMarkersListState extends State<SavedMarkersList> {
           return LatLng(latitude, longitude);
         }).toList();
       });
+    }
+  }
+
+  Future<void> removeMarkerFromList(int index, String markerToRemove) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String>? markerStrings = prefs.getStringList('savedMarkers');
+      if (markerStrings != null) {
+        markerStrings.removeAt(index);
+
+        await prefs.setStringList('savedMarkers', markerStrings);
+
+        // Remove the marker from the state as well
+        setState(() {
+          savedMarkers.removeAt(index);
+        });
+      }
+    } catch (e) {
+      // Handle errors
     }
   }
 
@@ -88,11 +109,10 @@ class _SavedMarkersListState extends State<SavedMarkersList> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      setState(() {
-                                        savedMarkers.remove(marker);
-                                      });
-                                      saveMarkersToSharedPreferences(
-                                          savedMarkers);
+                                      removeMarkerFromList(
+                                        index,
+                                        '${marker.latitude},${marker.longitude}',
+                                      );
                                       Navigator.pop(dialogContext);
                                     },
                                     child: const Text('Delete'),
@@ -104,8 +124,10 @@ class _SavedMarkersListState extends State<SavedMarkersList> {
                         },
                       ),
                       onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pop();
+                        // Add the marker to the map
+                        widget.showMarkerOnMap(marker);
+                        Navigator.pop(context);
+                        Navigator.pop(context);
                       },
                     );
                   },
