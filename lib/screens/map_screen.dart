@@ -18,6 +18,8 @@ import 'package:http/http.dart' as http;
 import 'package:skysoft/widgets/button_view.dart';
 import 'package:skysoft/widgets/kdgaugeview.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:skysoft/API/API_Function.dart';
+import 'package:skysoft/widgetAPI/InstructionCard.dart';
 
 // ========== CLASS CHO MAIN CHẠY ===================================================================================================================================================================
 class MapScreen extends StatefulWidget {
@@ -26,6 +28,9 @@ class MapScreen extends StatefulWidget {
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
+
+List<LatLng> pointsListIntruction = [];
+List<LatLng> latLngPoints = [];
 
 //========= CLASS CHÍNH ================================================================================================================================================================================
 class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
@@ -46,6 +51,39 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   bool isSavingWorkAddress = false;
   String homeAddress = "Set once and go";
   String workAddress = "Set once and go";
+  LatLng? firstMarkerLatLng;
+  LatLng? secondMarkerLatLng;
+  bool isMiniScreenVisible = false;
+  bool isEditingFirstMarker = true;
+  bool isEditingSecondMarker = false;
+  bool isNavigationBarVisible = false;
+  double convertDistanceToKilometers(String distanceString) {
+    try {
+      if (distanceString == null || distanceString.isEmpty) {
+        return 0.0;
+      }
+      double distanceInMeters = double.parse(distanceString);
+      return distanceInMeters / 1000.0;
+    } catch (e) {
+      print("Error converting distance to kilometers: $e");
+      return 0.0;
+    }
+  }
+
+  double convertTimeToMinutes(String timeString) {
+    try {
+      if (timeString == null || timeString.isEmpty) {
+        return 0.0;
+      }
+      double timeInMilliseconds = double.parse(timeString);
+      double timeInSeconds = timeInMilliseconds / 1000.0;
+      return timeInSeconds / 60.0;
+    } catch (e) {
+      print("Error converting time to minutes: $e");
+      return 0.0;
+    }
+  }
+
   //Marker tracking
   double? currentSpeed = 0.0;
   ValueNotifier<double> speedNotifier = ValueNotifier<double>(0.0);
@@ -108,12 +146,22 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                     subdomains: const ['a', 'b', 'c'],
                     userAgentPackageName: 'dev.fleaflet.flutter_map.example',
                   ),
-
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                          points: [...latLngPoints],
+                          color: Colors.blue,
+                          strokeWidth: 15),
+                      ...signPolylines,
+                    ],
+                  ),
                   MarkerLayer(
                     rotate: true,
                     markers: [...markers, ...tappedMarkers],
                   ),
-
+                  MarkerLayer(
+                    markers: arrowMarkers,
+                  ),
                   // Conditionally render CurrentLocationLayer and additional markers
                   if (isCurrentLocationLayerActive)
                     Visibility(
@@ -145,6 +193,18 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
+            Visibility(
+              visible: isNavigationBarVisible,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: InstructionCard(
+                  currentIndex: currentIndex,
+                  instructions: typedInstructions,
+                  goToPreviousInstruction: goToPreviousInstruction,
+                  goToNextInstruction: goToNextInstruction,
+                ),
+              ),
+            ),
 
             // HIỆU ỨNG CẢNH BÁO CẢ MÀN HÌNH
             Stack(
@@ -173,132 +233,123 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   ),
               ],
             ),
-            Positioned(
-              top: 90,
-              right: 5,
-              child: Column(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    height: isExpanded ? 80 : 60,
-                    width: 60,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        setState(() {
-                          isExpanded = !isExpanded;
-                        });
-                      },
-                      backgroundColor: Colors.grey,
-                      child: isExpanded
-                          ? const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                            )
-                          : const Icon(
-                              Icons.tune,
-                              color: Colors.white,
-                            ),
-                    ),
-                  ),
-                  if (isExpanded) ...[
-                    const SizedBox(height: 2),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
+            Visibility(
+              visible: !isNavigationBarVisible,
+              child: Positioned(
+                top: 90,
+                right: 5,
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      height: isExpanded ? 80 : 60,
+                      width: 60,
                       child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: rotateMapAroundMarker,
-                        tooltip: 'Rotate around marker',
-                        child: const Icon(Icons.cached),
-                      ),
-                    ),
-                    // const SizedBox(height: 3),
-                    // SizedBox(
-                    //   width: 40,
-                    //   height: 40,
-                    //   child: FloatingActionButton(
-                    //     backgroundColor: Colors.blueGrey,
-                    //     onPressed: () {
-                    //       moveMapCenterToSavedLatLng();
-                    //     },
-                    //     tooltip: 'Move Map Center to Saved LatLng',
-                    //     child: const Icon(Icons.adjust),
-                    //   ),
-                    // ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        // onPressed: () => rotateMap(_animatedMapController, 10), MẪU CỦA ANH AN
                         onPressed: () {
-                          rotateMapLeft();
+                          setState(() {
+                            isExpanded = !isExpanded;
+                          });
                         },
-                        tooltip: 'Rotate Map Left',
-                        child: const Icon(Icons.rotate_left),
+                        backgroundColor: Colors.grey,
+                        child: isExpanded
+                            ? const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              )
+                            : const Icon(
+                                Icons.tune,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: rotateMapRight,
-                        tooltip: 'Rotate Map Right',
-                        child: const Icon(Icons.rotate_right),
+                    if (isExpanded) ...[
+                      const SizedBox(height: 2),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: rotateMapAroundMarker,
+                          tooltip: 'Rotate around marker',
+                          child: const Icon(Icons.cached),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: zoomOut,
-                        tooltip: 'Zoom Out',
-                        child:
-                            const Icon(Icons.zoom_in_map, color: Colors.white),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          // onPressed: () => rotateMap(_animatedMapController, 10), MẪU CỦA ANH AN
+                          onPressed: () {
+                            rotateMapLeft();
+                          },
+                          tooltip: 'Rotate Map Left',
+                          child: const Icon(Icons.rotate_left),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: zoomIn,
-                        tooltip: 'Zoom In',
-                        child:
-                            const Icon(Icons.zoom_out_map, color: Colors.white),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: rotateMapRight,
+                          tooltip: 'Rotate Map Right',
+                          child: const Icon(Icons.rotate_right),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: centerMarkers,
-                        tooltip: 'Center the Markers',
-                        child: const Icon(Icons.center_focus_strong,
-                            color: Colors.white),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: zoomOut,
+                          tooltip: 'Zoom Out',
+                          child: const Icon(Icons.zoom_in_map,
+                              color: Colors.white),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.blueGrey,
-                        onPressed: clearAllMarkers,
-                        tooltip: 'Clear Marker onTAP',
-                        child: const Icon(Icons.clear_all, color: Colors.white),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: zoomIn,
+                          tooltip: 'Zoom In',
+                          child: const Icon(Icons.zoom_out_map,
+                              color: Colors.white),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: centerMarkers,
+                          tooltip: 'Center the Markers',
+                          child: const Icon(Icons.center_focus_strong,
+                              color: Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: FloatingActionButton(
+                          backgroundColor: Colors.blueGrey,
+                          onPressed: clearAllMarkers,
+                          tooltip: 'Clear Marker onTAP',
+                          child:
+                              const Icon(Icons.clear_all, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             // NÚT BÊN TRÊN ĐẦU MÀN HÌNH
@@ -343,6 +394,63 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
                   _navigationMode ? Icons.near_me_disabled : Icons.near_me,
                 ),
               ),
+            ),
+            Positioned(
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 110,
+              right: isDesktop
+                  ? 160
+                  : isTablet
+                      ? 140
+                      : 150,
+              child: FloatingActionButton(
+                backgroundColor: Colors.blueAccent,
+                onPressed: () {
+                  performRouteFinding();
+                },
+                tooltip: 'Polyline',
+                child: const Icon(
+                  Icons.route,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            //ben phai
+            Positioned(
+              bottom: isDesktop
+                  ? 110
+                  : isTablet
+                      ? 110
+                      : 110,
+              left: isDesktop
+                  ? 140
+                  : isTablet
+                      ? 120
+                      : 130,
+              child: FloatingActionButton(
+                backgroundColor: Colors.blueAccent,
+                onPressed: toggleMiniScreen,
+                tooltip: 'Toggle Mini Screen',
+                child: Icon(
+                  Icons.info,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Stack(
+              children: [
+                Positioned(
+                  top: 90,
+                  left: 0,
+                  child: Visibility(
+                    visible: isMiniScreenVisible,
+                    child: buildMiniScreenContent(),
+                  ),
+                ),
+              ],
             ),
             Positioned(
               // The position for the current location button based on screen size
@@ -664,9 +772,13 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
   void _toggleTilt() {
-    setState(() {
-      tilt = (tilt == 0.0) ? 45.0 : 0.0;
-    });
+    tilt = (tilt == 0.0) ? 45.0 : 0.0;
+    currentIndex = 0;
+    isNavigationBarVisible = !isNavigationBarVisible;
+    if (!isNavigationBarVisible) {
+      isNavigationBarVisible = false;
+    }
+    setState(() {});
   }
 
   void _toggleTracking() {
@@ -1830,82 +1942,152 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
   }
 
 // XEM THÔNG TIN CỦA MARKER ĐÓ ( POPUP HIỆN SAVE MARKER + DELETE MARKER + CLOSE)
-  Future<void> handleMarkerTap(LatLng tappedPoint) {
-    // Show the information about the marker (latitude and longitude)
-    return showDialog(
+  void handleMarkerTap(LatLng tappedPoint) {
+    showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Log the latitude and longitude of the tapped marker
-        log("Tapped Marker - Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}");
-
-        return AlertDialog(
+        return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20.0),
-            side: const BorderSide(
-              color: Colors.blueAccent,
-              width: 3.0,
-            ),
           ),
-          title: Text(
-            'Marker Info',
-            style: TextStyle(
-              color: Colors
-                  .blue.shade500, // Change the color of the title text here
-            ),
-          ),
-          content: Text(
-            'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () async {
-                setState(() {
-                  // Lưu lại vị trí của marker vào danh sách lưu trữ
-                  savedMarkers.add(tappedPoint);
-                });
-                // await saveMarkersToSharedPreferences(savedMarkers);
-                // ignore: use_build_context_synchronously
-                Navigator.of(context).pop(); // Đóng hộp thoại
-                // ignore: use_build_context_synchronously
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Marker saved'),
-                    duration:
-                        Duration(seconds: 2), // Thời gian hiển thị của SnackBar
+          child: Container(
+            width: 300,
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Marker Info',
+                  style: TextStyle(
+                    color: Colors.blue.shade500,
+                    fontSize: 20,
                   ),
-                );
-              },
-              child: const Text(
-                'Save Marker',
-                style: TextStyle(
-                  color: Colors.green,
                 ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // Remove the tapped marker from the tappedMarkers list
-                setState(() {
-                  tappedMarkers
-                      .removeWhere((marker) => marker.point == tappedPoint);
-                });
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text(
-                'Delete Marker',
-                style: TextStyle(
-                  color: Colors.red,
-                  // Change the color of the text here
+                SizedBox(height: 10),
+                Text(
+                  'Latitude: ${tappedPoint.latitude}\nLongitude: ${tappedPoint.longitude}',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
                 ),
-              ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        firstMarkerLatLng = tappedPoint;
+                        firstMarkerTextController.text =
+                            'Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}';
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Start point set'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.blue, // Màu nút start
+                      ),
+                      child: Text(
+                        'Start',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        secondMarkerLatLng = tappedPoint;
+                        secondMarkerTextController.text =
+                            'Latitude: ${tappedPoint.latitude}, Longitude: ${tappedPoint.longitude}';
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('End point set'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.blueAccent, // Màu nút end
+                      ),
+                      child: Text(
+                        'End',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () async {
+                        // Lưu lại vị trí của marker vào danh sách lưu trữ
+                        savedMarkers.add(tappedPoint);
+                        // await saveMarkersToSharedPreferences(savedMarkers);
+                        // ignore: use_build_context_synchronously
+                        Navigator.of(context).pop();
+                        // ignore: use_build_context_synchronously
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Marker saved'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.green, // Màu nút save
+                      ),
+                      child: Text(
+                        'Save',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          tappedMarkers.removeWhere(
+                              (marker) => marker.point == tappedPoint);
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.red, // Màu nút delete
+                      ),
+                      child: Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        primary: Colors.black, // Màu nút close
+                      ),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Close'),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -1961,6 +2143,9 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
 
 // XÓA TẤT CẢ MARKER ONTAP HOẶC SEARCH TRÊN BẢN ĐỒ ( VỊ TRÍ HIỆN TẠI SẼ K XÓA)
   void clearAllMarkers() {
+    firstMarkerTextController.text = '';
+    secondMarkerTextController.text = '';
+    clearData();
     setState(() {
       tappedMarkers.clear();
     });
@@ -2309,5 +2494,445 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
     isCurrentLocationLayerActive = true;
     areAdditionalMarkersVisible = true;
     // At this point, the layers should be added to the map automatically
+  }
+
+  void _showInstructionsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: EdgeInsets.all(16),
+          child: ListView.builder(
+            itemCount: instructions.length,
+            itemBuilder: (BuildContext context, int index) {
+              var instruction = instructions[index];
+
+              return Container(
+                margin: EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${index + 1}. ${instruction["text"] ?? ""}',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "${double.parse(instruction["distance"] ?? "0").toStringAsFixed(0)}m",
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void showSimpleSearchBar() {
+    _options.clear();
+    int selectedIndex;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  const Text(
+                    'Search for a location:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter a location...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.grey[300],
+                    ),
+                    onChanged: (String value) async {
+                      await repNameLocation(value).then((value) {
+                        setState(() {});
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _options.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_options[index].displayname),
+                          onTap: () {
+                            selectedIndex = index;
+                            if (isEditingFirstMarker) {
+                              firstMarkerLatLng = LatLng(
+                                  _options[index].lat, _options[index].lon);
+                              firstMarkerTextController.text =
+                                  'Latitude: ${_options[index].lat}, Longitude: ${_options[index].lon}';
+                              showMarkerOnMap(
+                                LatLng(
+                                    _options[index].lat, _options[index].lon),
+                              );
+                            } else {
+                              secondMarkerLatLng = LatLng(
+                                  _options[index].lat, _options[index].lon);
+                              secondMarkerTextController.text =
+                                  'Latitude: ${_options[index].lat}, Longitude: ${_options[index].lon}';
+                              showMarkerOnMap(
+                                LatLng(
+                                    _options[index].lat, _options[index].lon),
+                              );
+                            }
+                            isEditingFirstMarker = !isEditingFirstMarker;
+                            isEditingSecondMarker = !isEditingSecondMarker;
+
+                            Navigator.of(context).pop();
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget buildMiniScreenContent() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+    double containerWidth = screenWidth * 0.7;
+    double containerHeight = screenHeight * 0.65;
+    return Container(
+      width: containerWidth,
+      height: containerHeight,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.blue,
+          width: 2.0,
+        ),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                Icons.location_on,
+                size: 30,
+                color: Colors.blue,
+              ),
+              Text(
+                'Directions',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Icon(
+                Icons.map,
+                size: 30,
+                color: Colors.blue,
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          TextField(
+            decoration: InputDecoration(
+              labelText: 'From',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.location_pin),
+            ),
+            controller: firstMarkerTextController,
+            onTap: () {
+              isEditingFirstMarker = true;
+              showSimpleSearchBar();
+              _options.clear();
+              _searchController.clear();
+            },
+          ),
+          SizedBox(height: 20),
+          TextField(
+            decoration: InputDecoration(
+              labelText: 'To',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.location_pin),
+            ),
+            controller: secondMarkerTextController,
+            onTap: () {
+              isEditingFirstMarker = false;
+              showSimpleSearchBar();
+              _options.clear();
+              _searchController.clear();
+            },
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              clearData();
+              firstMarkerTextController.text = '';
+              secondMarkerTextController.text = '';
+              firstMarkerLatLng = null;
+              secondMarkerLatLng = null;
+            },
+            style: ElevatedButton.styleFrom(
+              primary: Colors.red,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.delete,
+                  size: 24,
+                  color: Colors.white,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20),
+          Row(
+            children: [
+              Icon(
+                Icons.fork_right,
+                size: 30,
+                color: Colors.blue,
+              ),
+              Text(
+                'Route Information',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 24,
+                    color: Colors.black,
+                  ),
+                  Text(
+                    'Distance:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${convertDistanceToKilometers(distance).toStringAsFixed(2)} km',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 24,
+                    color: Colors.black,
+                  ),
+                  Text(
+                    'Time:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${convertTimeToMinutes(time).toStringAsFixed(2)} minutes',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              _showInstructionsBottomSheet(context);
+            },
+            style: ElevatedButton.styleFrom(
+              primary: Colors.blue,
+            ),
+            icon: Icon(
+              Icons.directions_car,
+              size: 24,
+            ),
+            label: Text(
+              'Instructions',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> routeFn(String value) async {
+    try {
+      String url = 'http://192.168.1.28:8989/route?key=';
+      if (kDebugMode) {
+        print(url);
+      }
+
+      var requestData = {
+        "points": [
+          [
+            firstMarkerLatLng?.longitude ?? 0.0,
+            firstMarkerLatLng?.latitude ?? 0.0
+          ],
+          [
+            secondMarkerLatLng?.longitude ?? 0.0,
+            secondMarkerLatLng?.latitude ?? 0.0
+          ]
+        ],
+        "algorithm": "alternative_route",
+        "profile": "car",
+        "locale": "vi_VN"
+      };
+
+      var response = await http.post(
+        Uri.parse(url),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestData),
+      );
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> responseData = jsonDecode(response.body);
+        await pathInformation(responseData);
+        calculateAndDisplaySignPolyline();
+        print(latLngPoints);
+        print('s1');
+        print(pointsListIntruction);
+      } else {
+        if (kDebugMode) {
+          print('Request failed with status: ${response.statusCode}');
+        }
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
+  }
+
+  void performRouteFinding() {
+    if (firstMarkerLatLng != null && secondMarkerLatLng != null) {
+      clearData();
+      routeFn("Thay doi point o day");
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Please enter a marker before performing route finding.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void toggleMiniScreen() {
+    setState(() {
+      isMiniScreenVisible = !isMiniScreenVisible;
+    });
+  }
+
+  void goToNextInstruction() {
+    if (currentIndex < instructions.length - 1) {
+      currentIndex++;
+      centerMapOnPoint(pointsListIntruction[currentIndex]);
+    }
+    setState(() {});
+  }
+
+  void goToPreviousInstruction() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      centerMapOnPoint(pointsListIntruction[currentIndex]);
+    }
+    setState(() {});
+  }
+
+  void centerMapOnPoint(LatLng latLng) {
+    _animatedMapController.centerOnPoint(latLng);
   }
 }
